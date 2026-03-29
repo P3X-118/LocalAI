@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import ThemeToggle from './ThemeToggle'
 import { useAuth } from '../context/AuthContext'
 import { apiUrl } from '../utils/basePath'
+import HalLogo from './HalLogo'
 
 const COLLAPSED_KEY = 'localai_sidebar_collapsed'
 const SECTIONS_KEY = 'localai_sidebar_sections'
@@ -159,10 +160,10 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* Logo */}
         <div className="sidebar-header">
           <a href="./" className="sidebar-logo-link">
-            <img src={apiUrl('/static/logo_horizontal.png')} alt="LocalAI" className="sidebar-logo-img" />
+            <HalLogo collapsed={false} />
           </a>
-          <a href="./" className="sidebar-logo-icon" title="LocalAI">
-            <img src={apiUrl('/static/logo.png')} alt="LocalAI" className="sidebar-logo-icon-img" />
+          <a href="./" className="sidebar-logo-icon" title="HAL">
+            <HalLogo collapsed={true} />
           </a>
           <button className="sidebar-close-btn" onClick={onClose} aria-label="Close menu">
             <i className="fas fa-times" />

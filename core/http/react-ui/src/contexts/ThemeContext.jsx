@@ -5,7 +5,6 @@ const ThemeContext = createContext()
 function getInitialTheme() {
   const stored = localStorage.getItem('localai-theme')
   if (stored) return stored
-  if (window.matchMedia?.('(prefers-color-scheme: light)').matches) return 'light'
   return 'dark'
 }
 
