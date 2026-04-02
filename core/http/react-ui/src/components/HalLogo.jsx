@@ -1,8 +1,8 @@
 import { apiUrl } from '../utils/basePath'
 
 const textStyle = {
-  fontFamily: "'Orbitron', sans-serif",
-  fontWeight: '900',
+  fontFamily: "'Syncopate', sans-serif",
+  fontWeight: '700',
   letterSpacing: '0.12em',
   color: 'var(--text-primary)',
   whiteSpace: 'nowrap',

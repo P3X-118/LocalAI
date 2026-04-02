@@ -161,9 +161,11 @@ func InstallExternalBackend(ctx context.Context, galleries []config.Gallery, sys
 			return fmt.Errorf("error installing backend %s: %w", backend, err)
 		}
 	default:
-		// Treat as gallery backend name
-		if name != "" || alias != "" {
-			return fmt.Errorf("specifying a name or alias is not supported for gallery backends")
+		// Treat as gallery backend name.
+		// A name equal to the backend URI is redundant but harmless — ignore it.
+		// A different name would imply renaming, which gallery backends don't support.
+		if alias != "" || (name != "" && name != backend) {
+			return fmt.Errorf("gallery backends cannot be renamed: remove the name/alias field, or use an OCI image URI (oci://...) to install a custom backend with a specific name")
 		}
 		err := gallery.InstallBackendFromGallery(ctx, galleries, systemState, modelLoader, backend, downloadStatus, true)
 		if err != nil {
