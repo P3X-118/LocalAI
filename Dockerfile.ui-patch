@@ -1,0 +1,44 @@
+# Stage 1: build React UI
+FROM oven/bun:1 AS ui-builder
+
+WORKDIR /build/core/http/react-ui
+COPY core/http/react-ui/package.json core/http/react-ui/bun.lock ./
+RUN bun install --frozen-lockfile
+
+COPY core/http/react-ui/ .
+RUN bun run build
+
+# Stage 2: compile Go binary with updated embedded UI
+FROM golang:1.26 AS go-builder
+
+WORKDIR /build
+COPY . .
+
+# Overwrite dist with freshly built UI
+COPY --from=ui-builder /build/core/http/react-ui/dist ./core/http/react-ui/dist
+
+# Install go protoc plugins
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@1958fcbe2ca8bd93af633f11e97d44e567e945af && \
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.34.2
+
+# Generate protobuf (protoc binary already present in source tree)
+RUN mkdir -p pkg/grpc/proto && \
+    ./protoc --experimental_allow_proto3_optional \
+        -Ibackend/ \
+        --go_out=pkg/grpc/proto/ --go_opt=paths=source_relative \
+        --go-grpc_out=pkg/grpc/proto/ --go-grpc_opt=paths=source_relative \
+        backend/backend.proto
+
+# Generate inference defaults
+RUN go generate ./core/config/...
+
+# Build the binary with the updated React UI and static files embedded
+RUN CGO_ENABLED=0 go build \
+    -ldflags="-s -w" \
+    -tags "auth" \
+    -o local-ai \
+    ./cmd/local-ai
+
+# Final stage: layer new binary over existing production image
+FROM legitservices/localai:latest
+COPY --from=go-builder /build/local-ai /local-ai

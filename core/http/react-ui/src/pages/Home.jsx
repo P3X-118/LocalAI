@@ -10,6 +10,29 @@ import { useResources } from '../hooks/useResources'
 import { fileToBase64, backendControlApi, systemApi, modelsApi, mcpApi } from '../utils/api'
 import { API_CONFIG } from '../utils/config'
 
+function HomeHalLogo() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+      <img
+        src={apiUrl('/static/hal9001.webp')}
+        alt="HAL-9001"
+        style={{ width: '80px', height: '80px', borderRadius: '50%', display: 'block' }}
+      />
+      <span style={{
+        fontFamily: "'Syncopate', sans-serif",
+        fontWeight: '700',
+        letterSpacing: '0.12em',
+        fontSize: '0.85rem',
+        color: '#fff',
+        background: '#000',
+        padding: '4px 14px',
+        borderRadius: '4px',
+        whiteSpace: 'nowrap',
+      }}>HAL-9001</span>
+    </div>
+  )
+}
+
 export default function Home() {
   const navigate = useNavigate()
   const { addToast } = useOutletContext()
@@ -211,7 +234,7 @@ export default function Home() {
         <>
           {/* Hero with logo */}
           <div className="home-hero">
-            <img src={apiUrl('/static/logo.png')} alt="LocalAI" className="home-logo" />
+            <HomeHalLogo />
           </div>
 
           {/* Resource monitor - prominent placement */}
@@ -366,7 +389,7 @@ export default function Home() {
         /* No models installed - compact getting started */
         <div className="home-wizard">
           <div className="home-wizard-hero">
-            <img src={apiUrl('/static/logo.png')} alt="LocalAI" className="home-logo" />
+            <HomeHalLogo />
             <h1>Get started with LocalAI</h1>
             <p>Install your first model to begin. Browse the gallery or import your own.</p>
           </div>
@@ -411,7 +434,7 @@ export default function Home() {
         /* No models available (non-admin) */
         <div className="home-wizard">
           <div className="home-wizard-hero">
-            <img src={apiUrl('/static/logo.png')} alt="LocalAI" className="home-logo" />
+            <HomeHalLogo />
             <h1>No Models Available</h1>
             <p>There are no models installed yet. Ask your administrator to set up models so you can start chatting.</p>
           </div>
