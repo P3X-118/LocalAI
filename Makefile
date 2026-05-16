@@ -16,6 +16,12 @@ export BUILD_TYPE?=
 export CUDA_MAJOR_VERSION?=13
 export CUDA_MINOR_VERSION?=0
 
+# Extra flags injected into the core/backend `docker build` invocations.
+# Defaults to empty (no behavior change). Used e.g. on hosts whose kernel
+# lacks the iptables `raw` table (Jetson L4T) where builds require
+# DOCKER_BUILD_FLAGS=--network=host.
+DOCKER_BUILD_FLAGS?=
+
 GO_TAGS?=
 BUILD_ID?=
 NATIVE?=false
@@ -458,7 +464,7 @@ IMAGE_TYPE?=core
 BASE_IMAGE?=ubuntu:24.04
 
 docker:
-	docker build \
+	docker build $(DOCKER_BUILD_FLAGS) \
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 		--build-arg IMAGE_TYPE=$(IMAGE_TYPE) \
 		--build-arg GO_TAGS="$(GO_TAGS)" \
@@ -590,7 +596,7 @@ BACKEND_LLAMA_CPP_QUANTIZATION = llama-cpp-quantization|python|.|false|true
 # Helper function to build docker image for a backend
 # Usage: $(call docker-build-backend,BACKEND_NAME,DOCKERFILE_TYPE,BUILD_CONTEXT,PROGRESS_FLAG,NEEDS_BACKEND_ARG)
 define docker-build-backend
-	docker build $(if $(filter-out false,$(4)),$(4)) \
+	docker build $(DOCKER_BUILD_FLAGS) $(if $(filter-out false,$(4)),$(4)) \
 		--build-arg BUILD_TYPE=$(BUILD_TYPE) \
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 		--build-arg CUDA_MAJOR_VERSION=$(CUDA_MAJOR_VERSION) \

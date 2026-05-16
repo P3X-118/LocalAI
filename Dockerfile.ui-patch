@@ -32,8 +32,13 @@ RUN mkdir -p pkg/grpc/proto && \
 # Generate inference defaults
 RUN go generate ./core/config/...
 
-# Build the binary with the updated React UI and static files embedded
-RUN CGO_ENABLED=0 go build \
+# Build the binary with the updated React UI and static files embedded.
+# CGO_ENABLED=1 (matches upstream's default build) is REQUIRED: the `auth`
+# tag pulls in gorm.io/driver/sqlite (mattn/go-sqlite3), which needs cgo.
+# With CGO_ENABLED=0 the SQLite auth DB driver is a runtime stub and
+# LOCALAI_AUTH crash-loops with "go-sqlite3 requires cgo". golang:1.26
+# provides gcc; this is a native arm64 build (no cross-compile).
+RUN CGO_ENABLED=1 go build \
     -ldflags="-s -w" \
     -tags "auth" \
     -o local-ai \
