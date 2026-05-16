@@ -61,10 +61,15 @@ ifeq ($(BUILD_TYPE),sycl_f32)
 endif
 
 sources/stablediffusion-ggml.cpp:
-	git clone --recursive $(STABLEDIFFUSION_GGML_REPO) sources/stablediffusion-ggml.cpp && \
+	git clone $(STABLEDIFFUSION_GGML_REPO) sources/stablediffusion-ggml.cpp && \
 	cd sources/stablediffusion-ggml.cpp && \
 	git checkout $(STABLEDIFFUSION_GGML_VERSION) && \
-	git submodule update --init --recursive --depth 1 --single-branch
+	git submodule update --init --recursive --depth 1 --single-branch ggml
+# NOTE: init only the `ggml` submodule. stable-diffusion.cpp also vendors
+# `examples/server/frontend` (leejet/stable-ui), the demo web UI — not used
+# by this gRPC backend. At the pinned ref its nested submodule commit was
+# force-pushed away upstream, so `--recursive` over all submodules fails
+# with "not our ref". Scoping to `ggml` avoids the dead, irrelevant clone.
 
 # Detect OS
 UNAME_S := $(shell uname -s)
