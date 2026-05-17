@@ -7,8 +7,11 @@
 # note in the deployment repo's memory.
 torch==2.10.0
 torchaudio==2.10.0
-# uv/pip-created venvs do not include setuptools; some deps import
-# pkg_resources, which setuptools>=81 removed -- pin below that.
+# Some kokoro deps (e.g. babel) import pkg_resources, which setuptools>=81
+# removed. This line is only a documentary floor: the base venv already
+# ships setuptools 65.5.0 (<81) so it is a no-op here, and runProtogen
+# later force-upgrades setuptools past 81. The effective fix is the post-
+# installRequirements `pip install 'setuptools<81'` in install.sh.
 setuptools<81
 transformers
 accelerate
