@@ -1,6 +1,15 @@
 --extra-index-url https://pypi.jetson-ai-lab.io/jp6/cu126/
-torch
-torchaudio
+# Pin torch/torchaudio to the newest matched pair the jetson-ai-lab jp6/cu126
+# mirror actually serves (torchaudio caps at 2.10.0 there; torch/torchaudio
+# minor versions must match). Left unpinned, pip prefers a newer PyPI
+# cu130 aarch64 wheel that this host's CUDA 12.2 Jetson driver cannot run --
+# torch.cuda.is_available() comes back False. See the CUDA toolchain mismatch
+# note in the deployment repo's memory.
+torch==2.10.0
+torchaudio==2.10.0
+# uv/pip-created venvs do not include setuptools; some deps import
+# pkg_resources, which setuptools>=81 removed -- pin below that.
+setuptools<81
 transformers
 accelerate
 kokoro
