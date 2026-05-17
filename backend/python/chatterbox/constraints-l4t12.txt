@@ -1,0 +1,23 @@
+# Constraints for the L4T (Jetson, CUDA 12.2) chatterbox build.
+#
+# chatterbox-tts@faster declares ~15 mostly-unconstrained deps. Against the
+# slow pypi.jetson-ai-lab.io mirror the pip resolver backtracks for hours
+# (observed: omegaconf -> 1.x -> broken ruamel.yaml<0.15; then Jinja2
+# walking 2.11 -> 2.10.x ...). These pins anchor the heavy/pure-python deps
+# to the versions the chatterbox-tts maintainer documents as tested (see the
+# inline comments in mudler/chatterbox@faster pyproject.toml), so the
+# resolver converges in one pass instead of exploring the full range.
+#
+# torch/torchaudio are intentionally NOT pinned: the jetson-ai-lab jp6/cu126
+# index serves only a narrow set of Jetson wheels, so they don't backtrack,
+# and pinning a version the index lacks would hard-fail.
+omegaconf==2.3.0
+transformers==4.46.3
+diffusers==0.29.0
+librosa==0.10.0
+conformer==0.3.2
+safetensors==0.5.3
+# Modern Jinja2 (spacy, pulled via russian-text-stresser/spacy-pkuseg, needs
+# >=2.11; old 2.10.x has a Python-3.10-incompatible setup.py). Pin forward.
+jinja2>=3.1.0
+numpy>=1.24.0,<1.26.0

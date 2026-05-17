@@ -19,6 +19,9 @@ EXTRA_PIP_INSTALL_FLAGS+=" --no-build-isolation"
 
 if [ "x${BUILD_PROFILE}" == "xl4t12" ]; then
     USE_PIP=true
+    # Anchor the unconstrained chatterbox-tts deps so pip does not backtrack
+    # for hours against the slow jetson-ai-lab mirror. See constraints-l4t12.txt.
+    EXTRA_PIP_INSTALL_FLAGS+=" -c ${backend_dir}/constraints-l4t12.txt"
 fi
 
 
