@@ -60,6 +60,16 @@ ifeq ($(BUILD_TYPE),sycl_f32)
 		-DSD_SYCL=ON
 endif
 
+# L4T (Jetson). Upstream only enables CUDA for BUILD_TYPE=cublas, so an l4t
+# build of this backend came out CPU-only (libgosd links no libcudart) and a
+# 512x512 image took ~25 min on the Orin CPU. Treat l4t like cublas. Pin the
+# CUDA arch to sm_87 (Orin AGX) and rely on the in-container CUDA 12.2 toolkit
+# so kernels match the host driver -- a newer toolkit emits images the 12.2
+# driver rejects at runtime (the CUDA toolchain mismatch that sank GPU torch).
+ifeq ($(BUILD_TYPE),l4t)
+	CMAKE_ARGS+=-DSD_CUDA=ON -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=87
+endif
+
 sources/stablediffusion-ggml.cpp:
 	git clone $(STABLEDIFFUSION_GGML_REPO) sources/stablediffusion-ggml.cpp && \
 	cd sources/stablediffusion-ggml.cpp && \
@@ -74,8 +84,13 @@ sources/stablediffusion-ggml.cpp:
 # Detect OS
 UNAME_S := $(shell uname -s)
 
-# Only build CPU variants on Linux
-ifeq ($(UNAME_S),Linux)
+# Only build CPU SIMD variants on Linux x86. On L4T/Jetson (aarch64) the
+# avx/avx2/avx512 cmake flags are x86-only no-ops -- the variants come out
+# byte-identical, and with CUDA enabled each one is a full, very long CUDA
+# compile. Build just the fallback, which run.sh always selects on ARM anyway.
+ifeq ($(BUILD_TYPE),l4t)
+	VARIANT_TARGETS = libgosd-fallback.so
+else ifeq ($(UNAME_S),Linux)
 	VARIANT_TARGETS = libgosd-avx.so libgosd-avx2.so libgosd-avx512.so libgosd-fallback.so
 else
 	# On non-Linux (e.g., Darwin), build only fallback variant

@@ -20,6 +20,9 @@ endif
 # If build type is cublas, then we set -DGGML_CUDA=ON to CMAKE_ARGS automatically
 ifeq ($(BUILD_TYPE),cublas)
 	CMAKE_ARGS+=-DGGML_CUDA=ON
+# Jetson L4T (Orin AGX, compute capability 8.7) also needs the CUDA backend
+else ifeq ($(BUILD_TYPE),l4t)
+	CMAKE_ARGS+=-DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=87
 # If build type is openblas then we set -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS
 # to CMAKE_ARGS automatically
 else ifeq ($(BUILD_TYPE),openblas)
