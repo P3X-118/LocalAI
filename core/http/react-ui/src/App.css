@@ -1905,10 +1905,49 @@
 .chat-token-info {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  gap: var(--spacing-xs) var(--spacing-md);
   padding: var(--spacing-xs) var(--spacing-lg);
   font-size: 0.75rem;
   color: var(--color-text-muted);
+}
+
+/* Live GPU gauge (sits at the right end of the token bar) */
+.gpu-gauge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+}
+.gpu-gauge-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.gpu-gauge-key {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.gpu-gauge-bar {
+  width: 44px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--color-bg-primary);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.gpu-gauge-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 600ms ease, background-color 600ms ease;
+}
+.gpu-gauge-pct {
+  font-weight: 600;
+  min-width: 2.6em;
+  text-align: right;
 }
 
 .chat-streaming-cursor::after {
@@ -3601,5 +3640,89 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== Mobile UX hardening =====
+   Stops iOS focus-zoom, prevents horizontal overflow / edge shift, respects
+   device safe areas, and tunes touch behavior. Pinch-zoom stays available. */
+
+/* Remove the 300ms double-tap delay and accidental double-tap zoom on
+   interactive controls (pinch-zoom and panning still work). */
+button,
+.btn,
+[role="button"],
+.nav-item,
+.toggle,
+.canvas-mode-toggle,
+a {
+  touch-action: manipulation;
+}
+
+/* Long unbreakable strings (URLs, hashes) must not widen the chat column. */
+.chat-message-content {
+  overflow-wrap: anywhere;
+}
+.chat-message-content img,
+.chat-message-content video,
+.chat-message-content table,
+.chat-message-content canvas {
+  max-width: 100%;
+}
+
+/* Keep inner scrolls from chaining to the page (pull-to-refresh / bounce). */
+.chat-messages,
+.sidebar,
+.chat-sidebar,
+.chat-settings-drawer {
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 1023px) {
+  /* iOS Safari auto-zooms when a focused control has font-size < 16px. These
+     selectors match the originals' specificity and come later in the cascade,
+     so 16px wins on touch layouts (pinch-zoom is unaffected). */
+  input,
+  textarea,
+  select,
+  .input,
+  .textarea,
+  .chat-input,
+  .chat-search-input,
+  .home-textarea,
+  .model-selector {
+    font-size: 16px;
+  }
+
+  /* Respect notches / home indicator (requires viewport-fit=cover). env()
+     resolves to 0 on devices without insets, so the spacing fallback wins. */
+  .mobile-header {
+    padding-top: max(var(--spacing-sm), env(safe-area-inset-top));
+    padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+    padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+  }
+  .chat-input-area {
+    padding-bottom: max(var(--spacing-sm), env(safe-area-inset-bottom));
+  }
+  .sidebar {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Toasts must never push the viewport edge on narrow screens. */
+  .toast-container {
+    top: max(var(--spacing-md), env(safe-area-inset-top));
+    right: max(var(--spacing-md), env(safe-area-inset-right));
+    left: max(var(--spacing-md), env(safe-area-inset-left));
+  }
+  .toast {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Finger-friendly primary chat controls. */
+  .chat-send-btn,
+  .chat-stop-btn {
+    width: 40px;
+    height: 40px;
   }
 }

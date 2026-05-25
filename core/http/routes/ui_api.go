@@ -480,7 +480,7 @@ func RegisterUIAPIRoutes(app *echo.Echo, cl *config.ModelConfigLoader, ml *model
 			"models":           modelsJSON,
 			"repositories":     appConfig.Galleries,
 			"allTags":          tags,
-			"allBackends":     backendNames,
+			"allBackends":      backendNames,
 			"processingModels": processingModelsData,
 			"taskTypes":        taskTypes,
 			"availableModels":  totalModels,
@@ -1280,6 +1280,21 @@ func RegisterUIAPIRoutes(app *echo.Echo, cl *config.ModelConfigLoader, ml *model
 
 		return c.JSON(200, response)
 	}, adminMiddleware)
+
+	// Lightweight live GPU/memory stats for the in-chat gauge.
+	// Unlike /api/resources this is available to any authenticated user (no
+	// admin gate) and skips the models-directory walk, so it is cheap enough
+	// to poll every couple of seconds while chatting.
+	app.GET("/api/gpu", func(c echo.Context) error {
+		info := xsysinfo.GetResourceInfo()
+		return c.JSON(200, map[string]any{
+			"type":      info.Type,
+			"available": info.Available,
+			"gpus":      info.GPUs,
+			"ram":       info.RAM,
+			"aggregate": info.Aggregate,
+		})
+	})
 
 	if !appConfig.DisableRuntimeSettings {
 		// Settings API

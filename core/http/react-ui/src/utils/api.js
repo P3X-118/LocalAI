@@ -130,6 +130,11 @@ export const resourcesApi = {
   get: () => fetchJSON(API_CONFIG.endpoints.resources),
 }
 
+// Lightweight live GPU/memory stats for the in-chat gauge (non-admin, cheap)
+export const gpuApi = {
+  get: () => fetchJSON(API_CONFIG.endpoints.gpu),
+}
+
 // Operations API
 export const operationsApi = {
   list: () => fetchJSON(API_CONFIG.endpoints.operations),

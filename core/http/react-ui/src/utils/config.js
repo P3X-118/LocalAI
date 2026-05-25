@@ -23,6 +23,8 @@ export const API_CONFIG = {
 
     // Resources
     resources: '/api/resources',
+    // Lightweight live GPU/memory stats (non-admin, cheap to poll)
+    gpu: '/api/gpu',
 
     // Settings
     settings: '/api/settings',

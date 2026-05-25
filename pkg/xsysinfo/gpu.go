@@ -3,7 +3,9 @@ package xsysinfo
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -39,7 +41,11 @@ type GPUMemoryInfo struct {
 	TotalVRAM    uint64  `json:"total_vram"`    // Total VRAM in bytes
 	UsedVRAM     uint64  `json:"used_vram"`     // Used VRAM in bytes
 	FreeVRAM     uint64  `json:"free_vram"`     // Free VRAM in bytes
-	UsagePercent float64 `json:"usage_percent"` // Usage as percentage (0-100)
+	UsagePercent float64 `json:"usage_percent"` // Memory usage as percentage (0-100)
+	// UtilizationPercent is the GPU core/compute load (0-100). It is distinct
+	// from UsagePercent (memory) and is nil when the device/driver does not
+	// expose it (e.g. most desktop NVIDIA before this was wired, AMD/Intel).
+	UtilizationPercent *float64 `json:"utilization_percent,omitempty"`
 }
 
 // GPUAggregateInfo contains aggregate GPU information across all GPUs
@@ -58,6 +64,9 @@ type AggregateMemoryInfo struct {
 	FreeMemory   uint64  `json:"free_memory"`
 	UsagePercent float64 `json:"usage_percent"`
 	GPUCount     int     `json:"gpu_count"`
+	// UtilizationPercent is the average GPU compute load across GPUs that
+	// report it (0-100), or nil if none do.
+	UtilizationPercent *float64 `json:"utilization_percent,omitempty"`
 }
 
 // ResourceInfo represents unified memory resource information
@@ -211,11 +220,122 @@ func isUnifiedMemoryDevice(gpuName string) bool {
 	return false
 }
 
+// tegraGPULoadPaths are sysfs locations that expose the integrated GPU's
+// compute load on NVIDIA Jetson (Tegra) boards. The value is per-mille
+// (0-1000). Different L4T/JetPack releases and SoCs expose it at different
+// paths, so we probe them in order. These are readable from inside
+// containers because /sys is bind-mounted.
+var tegraGPULoadPaths = []string{
+	"/sys/devices/platform/gpu.0/load",
+	"/sys/devices/platform/bus@0/17000000.gpu/load",
+	"/sys/devices/gpu.0/load",
+}
+
+// tegraGPULoadGlobs cover boards whose GPU node MMIO address differs from the
+// fixed paths above (e.g. Xavier/Nano use a different base address).
+var tegraGPULoadGlobs = []string{
+	"/sys/devices/platform/*.gpu/load",
+	"/sys/devices/platform/bus@*/*.gpu/load",
+}
+
+// parseTegraLoad converts the raw contents of a Tegra GPU "load" sysfs node
+// (per-mille, 0-1000) into a 0-100 percentage. Returns ok=false if the value
+// cannot be parsed.
+func parseTegraLoad(raw string) (float64, bool) {
+	v, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil {
+		return 0, false
+	}
+	pct := float64(v) / 10.0
+	if pct < 0 {
+		pct = 0
+	}
+	if pct > 100 {
+		pct = 100
+	}
+	return pct, true
+}
+
+// readTegraGPULoad returns the integrated GPU compute load (0-100) on a Jetson
+// board, or ok=false if this is not a Tegra device / the node is unavailable.
+func readTegraGPULoad() (float64, bool) {
+	paths := append([]string{}, tegraGPULoadPaths...)
+	for _, g := range tegraGPULoadGlobs {
+		if matches, err := filepath.Glob(g); err == nil {
+			paths = append(paths, matches...)
+		}
+	}
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		if pct, ok := parseTegraLoad(string(data)); ok {
+			return pct, true
+		}
+	}
+	return 0, false
+}
+
+// tegraDeviceName returns a friendly board name from the device tree
+// (e.g. "NVIDIA Jetson AGX Orin"), falling back to a generic label.
+func tegraDeviceName() string {
+	if data, err := os.ReadFile("/proc/device-tree/model"); err == nil {
+		// device-tree strings are NUL-terminated and may contain NULs.
+		name := strings.TrimSpace(strings.ReplaceAll(string(data), "\x00", " "))
+		if name != "" {
+			return name
+		}
+	}
+	return "NVIDIA Tegra iGPU"
+}
+
+// getTegraGPU detects an NVIDIA Jetson (Tegra) integrated GPU and reports real
+// compute load from sysfs plus unified (system RAM) memory usage.
+//
+// This is required because on Tegra nvidia-smi returns [N/A] for memory and
+// does not report GPU utilization at all, so the generic NVIDIA path would
+// otherwise show the iGPU flat-lined at 0%.
+func getTegraGPU() []GPUMemoryInfo {
+	util, ok := readTegraGPULoad()
+	if !ok {
+		return nil // not a Jetson / sysfs node unavailable
+	}
+
+	info := GPUMemoryInfo{
+		Index:              0,
+		Name:               tegraDeviceName(),
+		Vendor:             VendorNVIDIA,
+		UtilizationPercent: &util,
+	}
+
+	// Tegra uses unified memory shared with the system, so RAM usage is the
+	// most accurate proxy for "VRAM".
+	if sysInfo, err := GetSystemRAMInfo(); err == nil {
+		info.TotalVRAM = sysInfo.Total
+		info.UsedVRAM = sysInfo.Used
+		info.FreeVRAM = sysInfo.Free
+		info.UsagePercent = sysInfo.UsagePercent
+	} else {
+		xlog.Debug("failed to get system RAM for Tegra unified memory", "error", err)
+	}
+
+	return []GPUMemoryInfo{info}
+}
+
 // GetGPUMemoryUsage returns real-time GPU memory usage for all detected GPUs.
 // It tries multiple vendor-specific tools in order: NVIDIA, AMD, Intel, Vulkan.
 // Returns an empty slice if no GPU monitoring tools are available.
 func GetGPUMemoryUsage() []GPUMemoryInfo {
 	var gpus []GPUMemoryInfo
+
+	// NVIDIA Jetson (Tegra) integrated GPU: nvidia-smi cannot report memory or
+	// utilization here, so read real compute load from sysfs first. When found,
+	// it is the only GPU on the board, so return early and skip the generic
+	// probes below (which would otherwise add a duplicate, flat-0% entry).
+	if tegraGPUs := getTegraGPU(); len(tegraGPUs) > 0 {
+		return tegraGPUs
+	}
 
 	// Try NVIDIA first
 	nvidiaGPUs := getNVIDIAGPUMemory()
@@ -283,7 +403,7 @@ func getNVIDIAGPUMemory() []GPUMemoryInfo {
 	}
 
 	cmd := exec.Command("nvidia-smi",
-		"--query-gpu=index,name,memory.total,memory.used,memory.free",
+		"--query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu",
 		"--format=csv,noheader,nounits")
 
 	var stdout, stderr bytes.Buffer
@@ -314,6 +434,18 @@ func getNVIDIAGPUMemory() []GPUMemoryInfo {
 		usedStr := strings.TrimSpace(parts[3])
 		freeStr := strings.TrimSpace(parts[4])
 
+		// utilization.gpu (GPU core/compute load) is optional: it is reported
+		// on desktop NVIDIA GPUs but is [N/A] on unified-memory parts.
+		var utilPtr *float64
+		if len(parts) >= 6 {
+			utilStr := strings.TrimSpace(parts[5])
+			if utilStr != "" && utilStr != "[N/A]" {
+				if u, err := strconv.ParseFloat(utilStr, 64); err == nil {
+					utilPtr = &u
+				}
+			}
+		}
+
 		var totalBytes, usedBytes, freeBytes uint64
 		var usagePercent float64
 
@@ -327,13 +459,14 @@ func getNVIDIAGPUMemory() []GPUMemoryInfo {
 				xlog.Debug("failed to get system RAM for unified memory device", "error", err, "device", name)
 				// Still add the GPU but with zero memory info
 				gpus = append(gpus, GPUMemoryInfo{
-					Index:        idx,
-					Name:         name,
-					Vendor:       VendorNVIDIA,
-					TotalVRAM:    0,
-					UsedVRAM:     0,
-					FreeVRAM:     0,
-					UsagePercent: 0,
+					Index:              idx,
+					Name:               name,
+					Vendor:             VendorNVIDIA,
+					TotalVRAM:          0,
+					UsedVRAM:           0,
+					FreeVRAM:           0,
+					UsagePercent:       0,
+					UtilizationPercent: utilPtr,
 				})
 				continue
 			}
@@ -348,13 +481,14 @@ func getNVIDIAGPUMemory() []GPUMemoryInfo {
 			// Unknown device with N/A values - skip memory info
 			xlog.Debug("nvidia-smi returned N/A for unknown device", "device", name)
 			gpus = append(gpus, GPUMemoryInfo{
-				Index:        idx,
-				Name:         name,
-				Vendor:       VendorNVIDIA,
-				TotalVRAM:    0,
-				UsedVRAM:     0,
-				FreeVRAM:     0,
-				UsagePercent: 0,
+				Index:              idx,
+				Name:               name,
+				Vendor:             VendorNVIDIA,
+				TotalVRAM:          0,
+				UsedVRAM:           0,
+				FreeVRAM:           0,
+				UsagePercent:       0,
+				UtilizationPercent: utilPtr,
 			})
 			continue
 		} else {
@@ -374,13 +508,14 @@ func getNVIDIAGPUMemory() []GPUMemoryInfo {
 		}
 
 		gpus = append(gpus, GPUMemoryInfo{
-			Index:        idx,
-			Name:         name,
-			Vendor:       VendorNVIDIA,
-			TotalVRAM:    totalBytes,
-			UsedVRAM:     usedBytes,
-			FreeVRAM:     freeBytes,
-			UsagePercent: usagePercent,
+			Index:              idx,
+			Name:               name,
+			Vendor:             VendorNVIDIA,
+			TotalVRAM:          totalBytes,
+			UsedVRAM:           usedBytes,
+			FreeVRAM:           freeBytes,
+			UsagePercent:       usagePercent,
+			UtilizationPercent: utilPtr,
 		})
 	}
 
@@ -610,19 +745,41 @@ func GetResourceInfo() ResourceInfo {
 	gpus := GetGPUMemoryUsage()
 
 	if len(gpus) > 0 {
-		// GPU available - return GPU info
-		aggregate := GetGPUAggregateInfo()
+		// GPU available - aggregate from the GPUs we already fetched (avoids a
+		// second probe) and average compute load across those that report it.
+		var totalVRAM, usedVRAM, freeVRAM uint64
+		var utilSum float64
+		var utilCount int
+		for _, g := range gpus {
+			totalVRAM += g.TotalVRAM
+			usedVRAM += g.UsedVRAM
+			freeVRAM += g.FreeVRAM
+			if g.UtilizationPercent != nil {
+				utilSum += *g.UtilizationPercent
+				utilCount++
+			}
+		}
+		var usagePercent float64
+		if totalVRAM > 0 {
+			usagePercent = float64(usedVRAM) / float64(totalVRAM) * 100
+		}
+		var utilPtr *float64
+		if utilCount > 0 {
+			avg := utilSum / float64(utilCount)
+			utilPtr = &avg
+		}
 		return ResourceInfo{
 			Type:      "gpu",
 			Available: true,
 			GPUs:      gpus,
 			RAM:       nil,
 			Aggregate: AggregateMemoryInfo{
-				TotalMemory:  aggregate.TotalVRAM,
-				UsedMemory:   aggregate.UsedVRAM,
-				FreeMemory:   aggregate.FreeVRAM,
-				UsagePercent: aggregate.UsagePercent,
-				GPUCount:     aggregate.GPUCount,
+				TotalMemory:        totalVRAM,
+				UsedMemory:         usedVRAM,
+				FreeMemory:         freeVRAM,
+				UsagePercent:       usagePercent,
+				GPUCount:           len(gpus),
+				UtilizationPercent: utilPtr,
 			},
 		}
 	}
