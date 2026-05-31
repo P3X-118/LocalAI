@@ -243,6 +243,40 @@ export const soundApi = {
   },
 }
 
+// Generated-media history (browse past image/video/audio outputs and their
+// prompts, params, timestamps — backed by sidecar JSON next to each artifact).
+export const generationsApi = {
+  list: ({ type, limit, offset } = {}) => {
+    const qs = new URLSearchParams()
+    if (type) qs.set('type', type)
+    if (limit) qs.set('limit', String(limit))
+    if (offset) qs.set('offset', String(offset))
+    const q = qs.toString()
+    return fetchJSON(`${API_CONFIG.endpoints.generations}${q ? '?' + q : ''}`)
+  },
+  get: (id) => fetchJSON(API_CONFIG.endpoints.generation(id)),
+  remove: (id) => fetchJSON(API_CONFIG.endpoints.generation(id), { method: 'DELETE' }),
+}
+
+// Async media-generation jobs — submit a sync-shape body, get back a job
+// record immediately, subscribe to SSE for live status, navigate away while
+// it runs.
+export const mediaJobsApi = {
+  enqueue: (type, body) => postJSON(API_CONFIG.endpoints.enqueueMediaJob(type), body),
+  list: ({ limit, offset } = {}) => {
+    const qs = new URLSearchParams()
+    if (limit) qs.set('limit', String(limit))
+    if (offset) qs.set('offset', String(offset))
+    const q = qs.toString()
+    return fetchJSON(`${API_CONFIG.endpoints.mediaJobs}${q ? '?' + q : ''}`)
+  },
+  get: (id) => fetchJSON(API_CONFIG.endpoints.mediaJob(id)),
+  cancel: (id) => fetchJSON(API_CONFIG.endpoints.mediaJob(id), { method: 'DELETE' }),
+  // SSE: caller opens EventSource(apiUrl(API_CONFIG.endpoints.mediaJobSSE(id)))
+  // and listens for 'status' events (JSON payload = MediaJob snapshot).
+  sseUrl: (id) => apiUrl(API_CONFIG.endpoints.mediaJobSSE(id)),
+}
+
 // Audio transcription
 export const audioApi = {
   transcribe: async (formData) => {

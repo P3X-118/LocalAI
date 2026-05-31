@@ -13,6 +13,7 @@ const topItems = [
   { path: '/app/models', icon: 'fas fa-download', label: 'Install Models', adminOnly: true },
   { path: '/app/chat', icon: 'fas fa-comments', label: 'Chat' },
   { path: '/app/studio', icon: 'fas fa-palette', label: 'Studio' },
+  { path: '/app/generations', icon: 'fas fa-photo-film', label: 'Generations' },
   { path: '/app/talk', icon: 'fas fa-phone', label: 'Talk' },
 ]
 

@@ -2,12 +2,14 @@ package elevenlabs
 
 import (
 	"path/filepath"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/P3X-118/LocalAI/core/backend"
 	"github.com/P3X-118/LocalAI/core/config"
 	"github.com/P3X-118/LocalAI/core/http/middleware"
 	"github.com/P3X-118/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/services"
 	"github.com/P3X-118/LocalAI/pkg/audio"
 	"github.com/P3X-118/LocalAI/pkg/model"
 	"github.com/mudler/xlog"
@@ -20,6 +22,7 @@ import (
 // @Router /v1/sound-generation [post]
 func SoundGenerationEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfig *config.ApplicationConfig) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		handlerStartedAt := time.Now()
 
 		input, ok := c.Get(middleware.CONTEXT_LOCALS_KEY_LOCALAI_REQUEST).(*schema.ElevenLabsSoundGenerationRequest)
 		if !ok || input.ModelID == "" {
@@ -57,6 +60,36 @@ func SoundGenerationEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader
 		if contentType != "" {
 			c.Response().Header().Set("Content-Type", contentType)
 		}
+
+		// Persistent history sidecar — non-streaming sound generation leaves a
+		// real file on disk. Prompt is the text (or caption+lyrics for music).
+		prompt := input.Text
+		if input.Caption != "" {
+			prompt = input.Caption
+		}
+		if err := services.NewMediaHistory(appConfig).Write(&schema.MediaArtifact{
+			UserID: services.RequestUserID(c),
+			Type:   schema.MediaAudioSound,
+			Model:  input.ModelID,
+			Prompt: prompt,
+			Params: map[string]any{
+				"duration":      input.Duration,
+				"temperature":   input.Temperature,
+				"caption":       input.Caption,
+				"lyrics":        input.Lyrics,
+				"language":      language,
+				"timesignature": input.Timesignature,
+				"instrumental":  input.Instrumental,
+			},
+			CreatedAt:  time.Now().UTC(),
+			DurationMs: time.Since(handlerStartedAt).Milliseconds(),
+			OutputPath: filePath,
+			RequestID:  c.Response().Header().Get(echo.HeaderXRequestID),
+			JobID:      c.Request().Header.Get("X-LocalAI-Job-ID"),
+		}); err != nil {
+			xlog.Warn("media history sidecar write failed", "err", err, "path", filePath)
+		}
+
 		return c.Attachment(filePath, filepath.Base(filePath))
 	}
 }

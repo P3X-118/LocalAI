@@ -55,6 +55,16 @@ export const API_CONFIG = {
     cancelAgentJob: (id) => `/api/agent/jobs/${id}/cancel`,
     executeAgentJob: '/api/agent/jobs/execute',
 
+    // Generated-media history (persistent sidecar metadata for every image /
+    // video / audio produced by the sync OpenAI handlers).
+    generations: '/api/generations',
+    generation: (id) => `/api/generations/${id}`,
+    // Async media-generation jobs (POST a sync body, get back a job record)
+    enqueueMediaJob: (type) => `/api/generations/jobs/${type}`,
+    mediaJobs: '/api/generations/jobs',
+    mediaJob: (id) => `/api/generations/jobs/${id}`,
+    mediaJobSSE: (id) => `/api/generations/jobs/${id}/sse`,
+
     // OpenAI-compatible endpoints
     chatCompletions: '/v1/chat/completions',
     mcpChatCompletions: '/v1/mcp/chat/completions',

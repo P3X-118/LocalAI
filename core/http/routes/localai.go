@@ -113,6 +113,23 @@ func RegisterLocalAIRoutes(router *echo.Echo,
 		requestExtractor.BuildFilteredFirstAvailableDefaultModel(config.BuildUsecaseFilterFn(config.FLAG_VIDEO)),
 		requestExtractor.SetModelAndConfig(func() schema.LocalAIRequest { return new(schema.VideoRequest) }))
 
+	// Generated-media history (persistent sidecar metadata) — see
+	// core/services/media_history.go. Every sync image/video/audio handler
+	// writes a <output>.json next to its artifact; these endpoints read them.
+	router.GET("/api/generations", localai.ListGenerationsEndpoint(app))
+	router.GET("/api/generations/:id", localai.GetGenerationEndpoint(app))
+	router.DELETE("/api/generations/:id", localai.DeleteGenerationEndpoint(app))
+
+	// Async media-generation jobs — POST a sync request body to
+	// /api/generations/jobs/<type> (image|video|tts|sound) and get back a
+	// job record that workers fulfil via loopback. Subscribe to SSE for live
+	// progress, or poll GET. See core/services/media_jobs.go.
+	router.POST("/api/generations/jobs/:type", localai.EnqueueMediaJobEndpoint(app))
+	router.GET("/api/generations/jobs", localai.ListMediaJobsEndpoint(app))
+	router.GET("/api/generations/jobs/:id", localai.GetMediaJobEndpoint(app))
+	router.GET("/api/generations/jobs/:id/sse", localai.SSEMediaJobEndpoint(app))
+	router.DELETE("/api/generations/jobs/:id", localai.CancelMediaJobEndpoint(app))
+
 	// Backend Statistics Module
 	// TODO: Should these use standard middlewares? Refactor later, they are extremely simple.
 	backendMonitorService := services.NewBackendMonitorService(ml, cl, appConfig) // Split out for now

@@ -2,12 +2,14 @@ package localai
 
 import (
 	"path/filepath"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/P3X-118/LocalAI/core/backend"
 	"github.com/P3X-118/LocalAI/core/config"
 	"github.com/P3X-118/LocalAI/core/http/middleware"
 	"github.com/P3X-118/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/services"
 	"github.com/P3X-118/LocalAI/pkg/audio"
 	"github.com/P3X-118/LocalAI/pkg/model"
 	"github.com/P3X-118/LocalAI/pkg/utils"
@@ -25,6 +27,7 @@ import (
 //		@Router		/tts [post]
 func TTSEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfig *config.ApplicationConfig) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		handlerStartedAt := time.Now()
 		input, ok := c.Get(middleware.CONTEXT_LOCALS_KEY_LOCALAI_REQUEST).(*schema.TTSRequest)
 		if !ok || input.Model == "" {
 			return echo.ErrBadRequest
@@ -97,6 +100,30 @@ func TTSEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfig 
 		if contentType != "" {
 			c.Response().Header().Set("Content-Type", contentType)
 		}
+
+		// Persistent history sidecar — non-streaming TTS leaves a real file on
+		// disk in {GeneratedContentDir}/audio/, so we can attach metadata to it.
+		// Streaming TTS has no persistent file → no sidecar (returned earlier).
+		if err := services.NewMediaHistory(appConfig).Write(&schema.MediaArtifact{
+			UserID: services.RequestUserID(c),
+			Type:   schema.MediaAudioTTS,
+			Model:  input.Model,
+			Prompt: input.Input,
+			Params: map[string]any{
+				"voice":       cfg.Voice,
+				"language":    cfg.Language,
+				"format":      input.Format,
+				"sample_rate": input.SampleRate,
+			},
+			CreatedAt:  time.Now().UTC(),
+			DurationMs: time.Since(handlerStartedAt).Milliseconds(),
+			OutputPath: filePath,
+			RequestID:  c.Response().Header().Get(echo.HeaderXRequestID),
+			JobID:      c.Request().Header.Get("X-LocalAI-Job-ID"),
+		}); err != nil {
+			xlog.Warn("media history sidecar write failed", "err", err, "path", filePath)
+		}
+
 		return c.Attachment(filePath, filepath.Base(filePath))
 	}
 }

@@ -1,14 +1,16 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams, useOutletContext } from 'react-router-dom'
 import ModelSelector from '../components/ModelSelector'
 import { CAP_SOUND_GENERATION } from '../utils/capabilities'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
-import { soundApi } from '../utils/api'
+import { generationsApi } from '../utils/api'
+import { useMediaJobs } from '../hooks/useMediaJobs'
 
 export default function Sound() {
   const { model: urlModel } = useParams()
   const { addToast } = useOutletContext()
+  const { jobs, submit } = useMediaJobs()
   const [model, setModel] = useState(urlModel || '')
   const [mode, setMode] = useState('simple')
   const [text, setText] = useState('')
@@ -22,10 +24,31 @@ export default function Sound() {
   const [keyscale, setKeyscale] = useState('')
   const [language, setLanguage] = useState('')
   const [timesignature, setTimesignature] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [audioUrl, setAudioUrl] = useState(null)
+  const [activeJobId, setActiveJobId] = useState(null)
   const audioRef = useRef(null)
+
+  const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null
+  const loading = activeJob && (activeJob.status === 'queued' || activeJob.status === 'running')
+
+  useEffect(() => {
+    if (!activeJob || activeJob.status !== 'completed' || !activeJob.artifact_id) return
+    let cancelled = false
+    generationsApi.get(activeJob.artifact_id).then(a => {
+      if (cancelled) return
+      if (a?.output_url) {
+        const u = a.output_url.replace(/^https?:\/\/[^/]+/, '')
+        setAudioUrl(u)
+        setTimeout(() => audioRef.current?.play().catch(() => {}), 200)
+      }
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [activeJob?.status, activeJob?.artifact_id])
+
+  useEffect(() => {
+    if (activeJob && activeJob.status === 'failed') setError(activeJob.error || 'sound generation failed')
+  }, [activeJob?.status, activeJob?.error])
 
   const handleGenerate = async (e) => {
     e.preventDefault()
@@ -50,20 +73,15 @@ export default function Sound() {
       if (timesignature.trim()) body.timesignature = timesignature.trim()
     }
 
-    setLoading(true)
-    setAudioUrl(null)
     setError(null)
+    setAudioUrl(null)
 
     try {
-      const blob = await soundApi.generate(body)
-      const url = URL.createObjectURL(blob)
-      setAudioUrl(url)
-      addToast('Sound generated', 'success')
-      setTimeout(() => audioRef.current?.play().catch(() => {}), 100)
+      const job = await submit('sound', body)
+      setActiveJobId(job.id)
+      addToast('Sound generation queued', 'info')
     } catch (err) {
       setError(err.message)
-    } finally {
-      setLoading(false)
     }
   }
 

@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useOutletContext } from 'react-router-dom'
 import ModelSelector from '../components/ModelSelector'
 import { CAP_VIDEO } from '../utils/capabilities'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
-import { videoApi, fileToBase64 } from '../utils/api'
+import { fileToBase64, generationsApi } from '../utils/api'
+import { useMediaJobs } from '../hooks/useMediaJobs'
 
 const SIZES = ['256x256', '512x512', '768x768', '1024x1024']
 
 export default function VideoGen() {
   const { model: urlModel } = useParams()
   const { addToast } = useOutletContext()
+  const { jobs, submit } = useMediaJobs()
   const [model, setModel] = useState(urlModel || '')
   const [prompt, setPrompt] = useState('')
   const [negativePrompt, setNegativePrompt] = useState('')
@@ -21,22 +23,37 @@ export default function VideoGen() {
   const [steps, setSteps] = useState('')
   const [seed, setSeed] = useState('')
   const [cfgScale, setCfgScale] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [videos, setVideos] = useState([])
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showImageInputs, setShowImageInputs] = useState(false)
   const [startImage, setStartImage] = useState(null)
   const [endImage, setEndImage] = useState(null)
+  const [activeJobId, setActiveJobId] = useState(null)
+
+  const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null
+  const loading = activeJob && (activeJob.status === 'queued' || activeJob.status === 'running')
+
+  useEffect(() => {
+    if (!activeJob || activeJob.status !== 'completed' || !activeJob.artifact_id) return
+    let cancelled = false
+    generationsApi.get(activeJob.artifact_id).then(a => {
+      if (!cancelled && a?.output_url) setVideos([{ url: a.output_url }])
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [activeJob?.status, activeJob?.artifact_id])
+
+  useEffect(() => {
+    if (activeJob && activeJob.status === 'failed') setError(activeJob.error || 'generation failed')
+  }, [activeJob?.status, activeJob?.error])
 
   const handleGenerate = async (e) => {
     e.preventDefault()
     if (!prompt.trim()) { addToast('Please enter a prompt', 'warning'); return }
     if (!model) { addToast('Please select a model', 'warning'); return }
 
-    setLoading(true)
-    setVideos([])
     setError(null)
+    setVideos([])
 
     const [w, h] = size.split('x').map(Number)
     const body = { model, prompt: prompt.trim(), width: w, height: h, fps: parseInt(fps) || 16 }
@@ -50,13 +67,11 @@ export default function VideoGen() {
     if (endImage) body.end_image = endImage
 
     try {
-      const data = await videoApi.generate(body)
-      setVideos(data?.data || [])
-      if (!data?.data?.length) addToast('No videos generated', 'warning')
+      const job = await submit('video', body)
+      setActiveJobId(job.id)
+      addToast('Video generation queued — track progress in the dock', 'info')
     } catch (err) {
       setError(err.message)
-    } finally {
-      setLoading(false)
     }
   }
 

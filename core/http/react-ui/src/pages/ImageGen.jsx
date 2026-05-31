@@ -1,16 +1,18 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams, useOutletContext } from 'react-router-dom'
 import ModelSelector from '../components/ModelSelector'
 import { CAP_IMAGE } from '../utils/capabilities'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
-import { imageApi, fileToBase64 } from '../utils/api'
+import { fileToBase64, generationsApi } from '../utils/api'
+import { useMediaJobs } from '../hooks/useMediaJobs'
 
 const SIZES = ['256x256', '512x512', '768x768', '1024x1024']
 
 export default function ImageGen() {
   const { model: urlModel } = useParams()
   const { addToast } = useOutletContext()
+  const { jobs, submit } = useMediaJobs()
   const [model, setModel] = useState(urlModel || '')
   const [prompt, setPrompt] = useState('')
   const [negativePrompt, setNegativePrompt] = useState('')
@@ -18,24 +20,43 @@ export default function ImageGen() {
   const [count, setCount] = useState(1)
   const [steps, setSteps] = useState('')
   const [seed, setSeed] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [images, setImages] = useState([])
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showImageInputs, setShowImageInputs] = useState(false)
   const [sourceImage, setSourceImage] = useState(null)
   const [refImages, setRefImages] = useState([])
+  const [activeJobId, setActiveJobId] = useState(null)
   const sourceRef = useRef(null)
   const refRef = useRef(null)
+
+  // Mirror this page's pending job from the global jobs map.
+  const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null
+  const loading = activeJob && (activeJob.status === 'queued' || activeJob.status === 'running')
+
+  // When our job completes, look up the resulting artifact and show it inline.
+  useEffect(() => {
+    if (!activeJob || activeJob.status !== 'completed' || !activeJob.artifact_id) return
+    let cancelled = false
+    generationsApi.get(activeJob.artifact_id).then(a => {
+      if (cancelled) return
+      if (a?.output_url) setImages([{ url: a.output_url }])
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [activeJob?.status, activeJob?.artifact_id])
+
+  // Surface failures from the job into the page error display.
+  useEffect(() => {
+    if (activeJob && activeJob.status === 'failed') setError(activeJob.error || 'generation failed')
+  }, [activeJob?.status, activeJob?.error])
 
   const handleGenerate = async (e) => {
     e.preventDefault()
     if (!prompt.trim()) { addToast('Please enter a prompt', 'warning'); return }
     if (!model) { addToast('Please select a model', 'warning'); return }
 
-    setLoading(true)
-    setImages([])
     setError(null)
+    setImages([])
 
     let combinedPrompt = prompt.trim()
     if (negativePrompt.trim()) combinedPrompt += '|' + negativePrompt.trim()
@@ -47,13 +68,11 @@ export default function ImageGen() {
     if (refImages.length > 0) body.ref_images = refImages
 
     try {
-      const data = await imageApi.generate(body)
-      setImages(data?.data || [])
-      if (!data?.data?.length) addToast('No images generated', 'warning')
+      const job = await submit('image', body)
+      setActiveJobId(job.id)
+      addToast('Generation queued — track progress in the dock', 'info')
     } catch (err) {
       setError(err.message)
-    } finally {
-      setLoading(false)
     }
   }
 

@@ -34,6 +34,7 @@ import Login from './pages/Login'
 import FineTune from './pages/FineTune'
 import Quantize from './pages/Quantize'
 import Studio from './pages/Studio'
+import Generations from './pages/Generations'
 import NotFound from './pages/NotFound'
 import Usage from './pages/Usage'
 import Users from './pages/Users'
@@ -70,6 +71,7 @@ const appChildren = [
   { path: 'sound', element: <Sound /> },
   { path: 'sound/:model', element: <Sound /> },
   { path: 'studio', element: <Studio /> },
+  { path: 'generations', element: <Generations /> },
   { path: 'talk', element: <Talk /> },
   { path: 'usage', element: <Usage /> },
   { path: 'account', element: <Account /> },
