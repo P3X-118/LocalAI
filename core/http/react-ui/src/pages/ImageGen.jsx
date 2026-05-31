@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
-import { useParams, useOutletContext } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useParams, useOutletContext, useLocation } from 'react-router-dom'
 import ModelSelector from '../components/ModelSelector'
 import { CAP_IMAGE } from '../utils/capabilities'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
 import GpuGauge from '../components/GpuGauge'
-import { fileToBase64, generationsApi } from '../utils/api'
+import ImagePicker from '../components/ImagePicker'
+import { generationsApi } from '../utils/api'
 import { useMediaJobs } from '../hooks/useMediaJobs'
 
 const SIZES = ['256x256', '512x512', '768x768', '1024x1024']
@@ -14,6 +15,7 @@ export default function ImageGen() {
   const { model: urlModel } = useParams()
   const { addToast } = useOutletContext()
   const { jobs, submit } = useMediaJobs()
+  const location = useLocation()
   const [model, setModel] = useState(urlModel || '')
   const [prompt, setPrompt] = useState('')
   const [negativePrompt, setNegativePrompt] = useState('')
@@ -28,8 +30,25 @@ export default function ImageGen() {
   const [sourceImage, setSourceImage] = useState(null)
   const [refImages, setRefImages] = useState([])
   const [activeJobId, setActiveJobId] = useState(null)
-  const sourceRef = useRef(null)
-  const refRef = useRef(null)
+  const [sourcePicker, setSourcePicker] = useState(false)
+  const [refPicker, setRefPicker] = useState(false)
+
+  // Honor pre-fills from the Generations page ("Use as source / references")
+  useEffect(() => {
+    const s = location.state || {}
+    if (s.sourceImage) {
+      setSourceImage(s.sourceImage)
+      setShowImageInputs(true)
+    }
+    if (Array.isArray(s.refImages) && s.refImages.length) {
+      setRefImages(s.refImages)
+      setShowImageInputs(true)
+    }
+    // One-shot: clear the state so a page refresh doesn't re-apply it.
+    if (s.sourceImage || s.refImages) {
+      window.history.replaceState({}, '')
+    }
+  }, [location.state])
 
   // Mirror this page's pending job from the global jobs map.
   const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null
@@ -77,14 +96,21 @@ export default function ImageGen() {
     }
   }
 
-  const handleSourceImage = async (e) => {
-    if (e.target.files[0]) setSourceImage(await fileToBase64(e.target.files[0]))
+  // Short preview label for an image value (URL or base64).
+  const previewLabel = (val) => {
+    if (!val) return ''
+    if (val.startsWith('http')) {
+      const tail = val.split('/').pop() || val
+      return tail.length > 30 ? tail.slice(0, 30) + '…' : tail
+    }
+    if (val.startsWith('/')) return val.split('/').pop() || val
+    return `${(val.length / 1024).toFixed(0)} KB image`
   }
-
-  const handleRefImages = async (e) => {
-    const arr = []
-    for (const f of e.target.files) arr.push(await fileToBase64(f))
-    setRefImages(prev => [...prev, ...arr])
+  // Thumbnail src — pass URLs straight through, base64 with data prefix.
+  const previewSrc = (val) => {
+    if (!val) return ''
+    if (val.startsWith('http') || val.startsWith('/')) return val
+    return `data:image/png;base64,${val}`
   }
 
   return (
@@ -136,12 +162,37 @@ export default function ImageGen() {
             <i className="fas fa-chevron-right" /> Image Inputs
           </div>
           {showImageInputs && (
-            <div style={{ marginBottom: 'var(--spacing-md)' }}>
-              <div className="form-group"><label className="form-label">Source Image (img2img)</label><input ref={sourceRef} type="file" accept="image/*" onChange={handleSourceImage} className="input" /></div>
+            <div className="image-inputs" style={{ marginBottom: 'var(--spacing-md)' }}>
               <div className="form-group">
-                <label className="form-label">Reference Images</label>
-                <input ref={refRef} type="file" accept="image/*" multiple onChange={handleRefImages} className="input" />
-                {refImages.length > 0 && <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{refImages.length} image(s) added</span>}
+                <label className="form-label">Source Image (img2img)</label>
+                {sourceImage ? (
+                  <div className="image-input-chip">
+                    <img src={previewSrc(sourceImage)} alt="source" />
+                    <span className="image-input-chip-label" title={sourceImage}>{previewLabel(sourceImage)}</span>
+                    <button type="button" className="image-input-chip-x" onClick={() => setSourceImage(null)} title="Remove">×</button>
+                  </div>
+                ) : (
+                  <button type="button" className="btn image-input-choose" onClick={() => setSourcePicker(true)}>
+                    <i className="fas fa-plus" /> Choose source image
+                  </button>
+                )}
+              </div>
+              <div className="form-group">
+                <label className="form-label">
+                  Reference Images
+                  {refImages.length > 0 && <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginLeft: 8 }}>({refImages.length} added)</span>}
+                </label>
+                <div className="image-input-chips">
+                  {refImages.map((r, i) => (
+                    <div key={i} className="image-input-chip image-input-chip-small">
+                      <img src={previewSrc(r)} alt="ref" />
+                      <button type="button" className="image-input-chip-x" onClick={() => setRefImages(refImages.filter((_, k) => k !== i))} title="Remove">×</button>
+                    </div>
+                  ))}
+                  <button type="button" className="btn image-input-choose" onClick={() => setRefPicker(true)}>
+                    <i className="fas fa-plus" /> Add references
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -174,6 +225,21 @@ export default function ImageGen() {
           )}
         </div>
       </div>
+
+      <ImagePicker
+        open={sourcePicker}
+        multi={false}
+        title="Choose source image (img2img)"
+        onClose={() => setSourcePicker(false)}
+        onPick={(arr) => { if (arr?.[0]) setSourceImage(arr[0]); setSourcePicker(false) }}
+      />
+      <ImagePicker
+        open={refPicker}
+        multi={true}
+        title="Add reference images"
+        onClose={() => setRefPicker(false)}
+        onPick={(arr) => { setRefImages(prev => [...prev, ...(arr || [])]); }}
+      />
     </div>
   )
 }

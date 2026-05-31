@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, useNavigate } from 'react-router-dom'
 import { generationsApi } from '../utils/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -55,11 +55,43 @@ function ArtifactPreview({ item }) {
 
 export default function Generations() {
   const { addToast } = useOutletContext()
+  const navigate = useNavigate()
   const [tab, setTab] = useState('')
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [detailItem, setDetailItem] = useState(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState({}) // {id: item}
+
+  // Helper: produce a same-origin path for an artifact suitable for the
+  // backend's processImageFile (which downloads http(s) URLs server-side).
+  const urlForItem = (item) => {
+    const raw = item.output_url || ''
+    return raw.replace(/^https?:\/\/[^/]+/, '') || raw
+  }
+
+  const sendToImgGen = (mode) => {
+    const picked = Object.values(selected).filter(i => i.type === 'image')
+    if (!picked.length) {
+      addToast('Select one or more image generations first', 'warning')
+      return
+    }
+    if (mode === 'source') {
+      navigate('/app/image', { state: { sourceImage: urlForItem(picked[0]) } })
+    } else {
+      navigate('/app/image', { state: { refImages: picked.map(urlForItem) } })
+    }
+  }
+
+  const toggleSelect = (item) => {
+    setSelected(prev => {
+      const next = { ...prev }
+      if (next[item.id]) delete next[item.id]
+      else next[item.id] = item
+      return next
+    })
+  }
 
   const fetchItems = useCallback(async () => {
     setLoading(true)
@@ -123,10 +155,45 @@ export default function Generations() {
             {counts[t.key] !== undefined && <span className="gen-tab-count">{counts[t.key]}</span>}
           </button>
         ))}
+        <button
+          className={`gen-tab ${selectMode ? 'gen-tab-active' : ''}`}
+          onClick={() => { setSelectMode(!selectMode); setSelected({}) }}
+          title="Toggle select mode"
+        >
+          <i className="fas fa-check-square" />
+          <span>{selectMode ? 'Cancel select' : 'Select'}</span>
+        </button>
         <button className="gen-tab gen-tab-refresh" onClick={fetchItems} title="Refresh">
           <i className="fas fa-rotate" />
         </button>
       </div>
+
+      {selectMode && (
+        <div className="gen-select-bar">
+          <span className="gen-select-count">{Object.keys(selected).length} selected</span>
+          <div className="gen-select-actions">
+            <button
+              className="btn"
+              onClick={() => sendToImgGen('source')}
+              disabled={!Object.keys(selected).length}
+              title="Use the first selected image as the img2img source"
+            >
+              <i className="fas fa-arrow-right-arrow-left" /> Use as source (img2img)
+            </button>
+            <button
+              className="btn"
+              onClick={() => sendToImgGen('refs')}
+              disabled={!Object.keys(selected).length}
+              title="Use all selected images as reference images"
+            >
+              <i className="fas fa-layer-group" /> Use as references
+            </button>
+            <button className="btn" onClick={() => setSelected({})} disabled={!Object.keys(selected).length}>
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <LoadingSpinner />
@@ -137,25 +204,45 @@ export default function Generations() {
         </div>
       ) : (
         <div className="gen-grid">
-          {items.map(item => (
-            <div key={item.id} className="gen-card" onClick={() => setDetailItem(item)} role="button" tabIndex={0}>
-              <ArtifactPreview item={item} />
-              <div className="gen-card-body">
-                <div className="gen-card-prompt" title={item.prompt}>{item.prompt || '(no prompt)'}</div>
-                <div className="gen-card-meta">
-                  <span title={item.model}>{item.model}</span>
-                  <span>{relativeTime(item.created_at)}</span>
-                </div>
-              </div>
-              <button
-                className="gen-card-delete"
-                title="Delete"
-                onClick={(e) => { e.stopPropagation(); setConfirmDelete(item) }}
+          {items.map(item => {
+            const isPicked = !!selected[item.id]
+            const canSelect = selectMode && item.type === 'image'
+            return (
+              <div
+                key={item.id}
+                className={`gen-card ${isPicked ? 'gen-card-picked' : ''} ${selectMode && !canSelect ? 'gen-card-disabled' : ''}`}
+                onClick={() => {
+                  if (selectMode) {
+                    if (canSelect) toggleSelect(item)
+                  } else {
+                    setDetailItem(item)
+                  }
+                }}
+                role="button" tabIndex={0}
               >
-                <i className="fas fa-trash" />
-              </button>
-            </div>
-          ))}
+                <ArtifactPreview item={item} />
+                <div className="gen-card-body">
+                  <div className="gen-card-prompt" title={item.prompt}>{item.prompt || '(no prompt)'}</div>
+                  <div className="gen-card-meta">
+                    <span title={item.model}>{item.model}</span>
+                    <span>{relativeTime(item.created_at)}</span>
+                  </div>
+                </div>
+                {selectMode && canSelect && (
+                  <span className="gen-card-check">
+                    <i className={`fas ${isPicked ? 'fa-check-circle' : 'fa-circle'}`} />
+                  </span>
+                )}
+                <button
+                  className="gen-card-delete"
+                  title="Delete"
+                  onClick={(e) => { e.stopPropagation(); setConfirmDelete(item) }}
+                >
+                  <i className="fas fa-trash" />
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -194,6 +281,24 @@ export default function Generations() {
                 <div className="gen-detail-actions">
                   <a className="btn btn-primary" href={detailItem.output_url} target="_blank" rel="noreferrer">Open in new tab</a>
                   <a className="btn" href={detailItem.output_url} download>Download</a>
+                  {detailItem.type === 'image' && (
+                    <>
+                      <button
+                        className="btn"
+                        onClick={() => { navigate('/app/image', { state: { sourceImage: urlForItem(detailItem) } }); setDetailItem(null) }}
+                        title="Open Image Generation with this as the img2img source"
+                      >
+                        <i className="fas fa-arrow-right-arrow-left" /> Use as source
+                      </button>
+                      <button
+                        className="btn"
+                        onClick={() => { navigate('/app/image', { state: { refImages: [urlForItem(detailItem)] } }); setDetailItem(null) }}
+                        title="Open Image Generation with this as a reference image"
+                      >
+                        <i className="fas fa-layer-group" /> Use as reference
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
