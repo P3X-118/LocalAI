@@ -133,7 +133,7 @@ export default function Generations() {
       ) : items.length === 0 ? (
         <div className="empty-state">
           <i className="fas fa-photo-film" style={{ fontSize: 48, opacity: 0.3 }} />
-          <p>No generations yet. Head to <a href="/studio">Studio</a> to create one.</p>
+          <p>No generations yet. Head to <a href="/app/studio">Studio</a> to create one.</p>
         </div>
       ) : (
         <div className="gen-grid">

@@ -62,7 +62,7 @@ export default function JobsDock() {
       <div className="jobs-dock-header">
         <i className="fas fa-tasks" />
         <span className="jobs-dock-header-title">Background generations ({activeCount})</span>
-        <Link to="/generations" className="jobs-dock-header-link" title="Open full history">
+        <Link to="/app/generations" className="jobs-dock-header-link" title="Open full history">
           <i className="fas fa-photo-film" />
         </Link>
         <button
@@ -94,7 +94,7 @@ export default function JobsDock() {
               {j.error && <div className="jobs-dock-error" title={j.error}>{j.error}</div>}
               <div className="jobs-dock-actions">
                 {isDone && j.artifact_id && (
-                  <Link to={`/generations#${j.artifact_id}`} className="jobs-dock-link" onClick={() => dismiss(j.id)}>
+                  <Link to={`/app/generations#${j.artifact_id}`} className="jobs-dock-link" onClick={() => dismiss(j.id)}>
                     View result
                   </Link>
                 )}
@@ -113,7 +113,7 @@ export default function JobsDock() {
           )
         })}
         {jobs.length > 6 && (
-          <Link to="/generations" className="jobs-dock-more">+ {jobs.length - 6} more — view all in history</Link>
+          <Link to="/app/generations" className="jobs-dock-more">+ {jobs.length - 6} more — view all in history</Link>
         )}
       </div>
     </div>
