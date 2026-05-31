@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useMediaJobs, MEDIA_JOB_TERMINAL_STATUSES } from '../hooks/useMediaJobs'
 
@@ -23,17 +24,55 @@ const TYPE_LABEL = {
   audio_sound: 'Sound',
 }
 
+const COLLAPSED_KEY = 'localai.jobs-dock.collapsed'
+
 // JobsDock — fixed-position corner card that surfaces background media-generation
-// jobs. Hidden when no jobs are tracked. Auto-hides terminal jobs after 30s.
+// jobs. Hidden when no jobs are tracked. Collapse/expand state persists across
+// reloads via localStorage. The minimized state shows a single pill with the
+// active count; clicking it (or the chevron) restores the full list.
 export default function JobsDock() {
   const { jobs, dismiss, cancel } = useMediaJobs()
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(COLLAPSED_KEY) === 'true' } catch { return false }
+  })
+  useEffect(() => {
+    try { localStorage.setItem(COLLAPSED_KEY, String(collapsed)) } catch { /* ignore */ }
+  }, [collapsed])
+
   if (!jobs.length) return null
+
+  const activeCount = jobs.filter(j => !MEDIA_JOB_TERMINAL_STATUSES.has(j.status)).length
+
+  if (collapsed) {
+    return (
+      <button
+        className="jobs-dock jobs-dock-collapsed"
+        onClick={() => setCollapsed(false)}
+        title={`${activeCount} active, ${jobs.length} tracked — click to expand`}
+        aria-label="Expand background generations dock"
+      >
+        <i className="fas fa-tasks" />
+        <span className="jobs-dock-collapsed-count">{activeCount || jobs.length}</span>
+      </button>
+    )
+  }
 
   return (
     <div className="jobs-dock">
       <div className="jobs-dock-header">
         <i className="fas fa-tasks" />
-        <span>Background generations ({jobs.filter(j => !MEDIA_JOB_TERMINAL_STATUSES.has(j.status)).length})</span>
+        <span className="jobs-dock-header-title">Background generations ({activeCount})</span>
+        <Link to="/generations" className="jobs-dock-header-link" title="Open full history">
+          <i className="fas fa-photo-film" />
+        </Link>
+        <button
+          className="jobs-dock-header-btn"
+          onClick={() => setCollapsed(true)}
+          title="Minimize"
+          aria-label="Minimize background generations dock"
+        >
+          <i className="fas fa-chevron-down" />
+        </button>
       </div>
       <div className="jobs-dock-list">
         {jobs.slice(0, 6).map(j => {
@@ -74,7 +113,7 @@ export default function JobsDock() {
           )
         })}
         {jobs.length > 6 && (
-          <Link to="/generations" className="jobs-dock-more">+ {jobs.length - 6} more</Link>
+          <Link to="/generations" className="jobs-dock-more">+ {jobs.length - 6} more — view all in history</Link>
         )}
       </div>
     </div>

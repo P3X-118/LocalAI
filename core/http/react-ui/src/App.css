@@ -4050,3 +4050,67 @@ a {
   gap: 8px;
   margin-top: 4px;
 }
+
+/* JobsDock — minimize/expand affordances + header controls */
+
+.jobs-dock-header-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jobs-dock-header-link,
+.jobs-dock-header-btn {
+  background: transparent;
+  border: 1px solid var(--color-border, #2a2a2a);
+  color: var(--color-text-muted, #aaa);
+  width: 26px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 0.75rem;
+  padding: 0;
+}
+.jobs-dock-header-link:hover,
+.jobs-dock-header-btn:hover {
+  color: var(--color-text, #e8e8e8);
+  border-color: var(--color-primary, #6cb8ff);
+}
+
+/* Minimized state: a small pill in the same corner with the active count */
+.jobs-dock-collapsed {
+  width: auto;
+  height: 40px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border, #2a2a2a);
+  background: var(--color-bg-elevated, #1a1a1a);
+  color: var(--color-text, #e8e8e8);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  max-height: none;
+}
+.jobs-dock-collapsed:hover {
+  border-color: var(--color-primary, #6cb8ff);
+}
+.jobs-dock-collapsed-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  background: var(--color-primary, #6cb8ff);
+  color: var(--color-bg, #111);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
