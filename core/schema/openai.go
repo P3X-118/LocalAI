@@ -3,7 +3,7 @@ package schema
 import (
 	"context"
 
-	functions "github.com/mudler/LocalAI/pkg/functions"
+	functions "github.com/P3X-118/LocalAI/pkg/functions"
 )
 
 // APIError provides error information returned by the OpenAI API.

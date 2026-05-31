@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/http/auth"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/http/auth"
 	. "github.com/onsi/gomega"
 	"gorm.io/gorm"
 )

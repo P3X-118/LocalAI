@@ -1,7 +1,7 @@
 package system
 
 import (
-	"github.com/mudler/LocalAI/pkg/xsysinfo"
+	"github.com/P3X-118/LocalAI/pkg/xsysinfo"
 	"github.com/mudler/xlog"
 )
 

@@ -3,7 +3,7 @@ package peg_test
 import (
 	"encoding/json"
 
-	"github.com/mudler/LocalAI/pkg/functions/peg"
+	"github.com/P3X-118/LocalAI/pkg/functions/peg"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

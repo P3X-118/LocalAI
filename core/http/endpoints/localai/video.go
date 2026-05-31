@@ -15,13 +15,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/http/middleware"
-	"github.com/mudler/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/http/middleware"
+	"github.com/P3X-118/LocalAI/core/schema"
 
-	"github.com/mudler/LocalAI/core/backend"
+	"github.com/P3X-118/LocalAI/core/backend"
 
-	model "github.com/mudler/LocalAI/pkg/model"
+	model "github.com/P3X-118/LocalAI/pkg/model"
 	"github.com/mudler/xlog"
 )
 

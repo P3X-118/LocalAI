@@ -66,7 +66,7 @@ uname -m
 
 **Symptoms:** macOS blocks LocalAI from running because the DMG is not signed by Apple.
 
-**Solution:** See [GitHub issue #6268](https://github.com/mudler/LocalAI/issues/6268) for quarantine bypass instructions. This is tracked for resolution in [issue #6244](https://github.com/mudler/LocalAI/issues/6244).
+**Solution:** See [GitHub issue #6268](https://github.com/P3X-118/LocalAI/issues/6268) for quarantine bypass instructions. This is tracked for resolution in [issue #6244](https://github.com/P3X-118/LocalAI/issues/6244).
 
 
 
@@ -438,7 +438,7 @@ See the [Distributed Inferencing guide](/features/distributed-inferencing/) for 
 
 If your issue isn't covered here:
 
-1. **Search existing issues:** Check the [GitHub Issues](https://github.com/mudler/LocalAI/issues) for similar problems
+1. **Search existing issues:** Check the [GitHub Issues](https://github.com/P3X-118/LocalAI/issues) for similar problems
 2. **Enable debug logging:** Run with `DEBUG=true` or `--log-level=debug` and include the logs when reporting
 3. **Open a new issue:** Include your OS, hardware (CPU/GPU), LocalAI version, model being used, full error logs, and steps to reproduce
 4. **Community help:** Join the [LocalAI Discord](https://discord.gg/uJAeKSAGDy) for community support

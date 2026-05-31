@@ -8,16 +8,16 @@ icon = "newspaper"
 
 Release notes have been now moved completely over Github releases.
 
-You can see the release notes [here](https://github.com/mudler/LocalAI/releases).
+You can see the release notes [here](https://github.com/P3X-118/LocalAI/releases).
 
 ## 2024 Highlights
 
-- **April 2024**: [Reranker API](https://github.com/mudler/LocalAI/pull/2121)
-- **May 2024**: [Distributed inferencing](https://github.com/mudler/LocalAI/pull/2324), [Decentralized P2P llama.cpp](https://github.com/mudler/LocalAI/pull/2343) — [Docs](https://localai.io/features/distribute/)
-- **July/August 2024**: [P2P Dashboard, Federated mode and AI Swarms](https://github.com/mudler/LocalAI/pull/2723), [P2P Global community pools](https://github.com/mudler/LocalAI/issues/3113), FLUX-1 support, [P2P Explorer](https://explorer.localai.io)
+- **April 2024**: [Reranker API](https://github.com/P3X-118/LocalAI/pull/2121)
+- **May 2024**: [Distributed inferencing](https://github.com/P3X-118/LocalAI/pull/2324), [Decentralized P2P llama.cpp](https://github.com/P3X-118/LocalAI/pull/2343) — [Docs](https://localai.io/features/distribute/)
+- **July/August 2024**: [P2P Dashboard, Federated mode and AI Swarms](https://github.com/P3X-118/LocalAI/pull/2723), [P2P Global community pools](https://github.com/P3X-118/LocalAI/issues/3113), FLUX-1 support, [P2P Explorer](https://explorer.localai.io)
 - **October 2024**: Examples moved to [LocalAI-examples](https://github.com/mudler/LocalAI-examples)
-- **November 2024**: [Voice Activity Detection (VAD)](https://github.com/mudler/LocalAI/pull/4204), [Bark.cpp backend](https://github.com/mudler/LocalAI/pull/4287)
-- **December 2024**: [stablediffusion.cpp backend (ggml)](https://github.com/mudler/LocalAI/pull/4289)
+- **November 2024**: [Voice Activity Detection (VAD)](https://github.com/P3X-118/LocalAI/pull/4204), [Bark.cpp backend](https://github.com/P3X-118/LocalAI/pull/4287)
+- **December 2024**: [stablediffusion.cpp backend (ggml)](https://github.com/P3X-118/LocalAI/pull/4289)
 
 ---
 
@@ -43,11 +43,11 @@ New:
 Due to the python dependencies size of images grew in size. 
 If you still want to use smaller images without python dependencies, you can use the corresponding images tags ending with `-core`.
 
-Full changelog: https://github.com/mudler/LocalAI/releases/tag/v2.0.0
+Full changelog: https://github.com/P3X-118/LocalAI/releases/tag/v2.0.0
 
 ## 30-10-2023: __v1.40.0__
 
-This release is a preparation before v2 - the efforts now will be to refactor, polish and add new backends. Follow up on: https://github.com/mudler/LocalAI/issues/1126
+This release is a preparation before v2 - the efforts now will be to refactor, polish and add new backends. Follow up on: https://github.com/P3X-118/LocalAI/issues/1126
 
 ## Hot topics
 
@@ -61,7 +61,7 @@ This release bring support for AMD thanks to @65a .  See more details in {{< pr 
 
 Thanks to @jespino now the local-ai binary has more subcommands allowing to manage the gallery or try out directly inferencing, check it out!
 
-[Release notes](https://github.com/mudler/LocalAI/releases/tag/v1.40.0)
+[Release notes](https://github.com/P3X-118/LocalAI/releases/tag/v1.40.0)
 
 ## 25-09-2023: __v1.30.0__
 
@@ -69,7 +69,7 @@ This is an exciting LocalAI release! Besides bug-fixes and enhancements this rel
 
 Check out the documentation for vllm [here](https://localai.io/model-compatibility/vllm/) and Vall-E-X [here](https://localai.io/model-compatibility/vall-e-x/)
 
-[Release notes](https://github.com/mudler/LocalAI/releases/tag/v1.30.0)
+[Release notes](https://github.com/P3X-118/LocalAI/releases/tag/v1.30.0)
 
 ## 26-08-2023: __v1.25.0__
 

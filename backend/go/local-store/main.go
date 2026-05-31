@@ -6,7 +6,7 @@ import (
 	"flag"
 	"os"
 
-	grpc "github.com/mudler/LocalAI/pkg/grpc"
+	grpc "github.com/P3X-118/LocalAI/pkg/grpc"
 	"github.com/mudler/xlog"
 )
 

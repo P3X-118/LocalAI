@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/mudler/LocalAI/core/http/endpoints/openai/types"
+	"github.com/P3X-118/LocalAI/core/http/endpoints/openai/types"
 	"github.com/mudler/xlog"
 )
 

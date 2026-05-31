@@ -52,7 +52,7 @@ The instructions are displayed in the "Swarm" section of the WebUI, guiding you 
 {{% notice note %}}
 This feature is available exclusively with llama-cpp compatible models.
 
-This feature was introduced in [LocalAI pull request #2324](https://github.com/mudler/LocalAI/pull/2324) and is based on the upstream work in [llama.cpp pull request #6829](https://github.com/ggerganov/llama.cpp/pull/6829).
+This feature was introduced in [LocalAI pull request #2324](https://github.com/P3X-118/LocalAI/pull/2324) and is based on the upstream work in [llama.cpp pull request #6829](https://github.com/ggerganov/llama.cpp/pull/6829).
  {{% /notice %}}
 
 To connect multiple workers to a single LocalAI instance, start first a server in p2p mode:
@@ -108,7 +108,7 @@ The server logs should indicate that new workers are being discovered.
 
 3. Start inference as usual on the server initiated in step 1.
 
-![output](https://github.com/mudler/LocalAI/assets/2420543/8ca277cf-c208-4562-8929-808b2324b584)
+![output](https://github.com/P3X-118/LocalAI/assets/2420543/8ca277cf-c208-4562-8929-808b2324b584)
 
 
 ## Environment Variables
@@ -151,4 +151,4 @@ LOCALAI_P2P_LOGLEVEL=debug LOCALAI_P2P_LIB_LOGLEVEL=debug LOCALAI_P2P_ENABLE_LIM
 - If running in p2p mode with container images, make sure you start the container with `--net host` or `network_mode: host` in the docker-compose file.
 - Only a single model is supported currently.
 - Ensure the server detects new workers before starting inference. Currently, additional workers cannot be added once inference has begun.
-- For more details on the implementation, refer to [LocalAI pull request #2343](https://github.com/mudler/LocalAI/pull/2343)
+- For more details on the implementation, refer to [LocalAI pull request #2343](https://github.com/P3X-118/LocalAI/pull/2343)

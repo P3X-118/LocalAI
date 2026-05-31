@@ -3,8 +3,8 @@ package gallery
 import (
 	"fmt"
 
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/pkg/system"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/pkg/system"
 	"github.com/mudler/xlog"
 )
 

@@ -14,14 +14,14 @@ LocalAI to ease out installations of models provide a way to preload models on s
 
 
 {{% notice note %}}
-The models in this gallery are not directly maintained by LocalAI. If you find a model that is not working, please open an issue on the [main LocalAI repository](https://github.com/mudler/LocalAI/issues).
+The models in this gallery are not directly maintained by LocalAI. If you find a model that is not working, please open an issue on the [main LocalAI repository](https://github.com/P3X-118/LocalAI/issues).
  {{% /notice %}}
 
 {{% notice note %}}
 GPT and text generation models might have a license which is not permissive for commercial use or might be questionable or without any license at all. Please check the model license before using it. The official gallery contains only open licensed models.
  {{% /notice %}}
 
-![output](https://github.com/mudler/LocalAI/assets/2420543/7b16676e-d5b1-4c97-89bd-9fa5065c21ad)
+![output](https://github.com/P3X-118/LocalAI/assets/2420543/7b16676e-d5b1-4c97-89bd-9fa5065c21ad)
 
 ## Useful Links and resources
 
@@ -111,7 +111,7 @@ This will be rejected with a security error.
 
 {{% notice note %}}
 
-If you want to build your own gallery, there is no documentation yet. However you can find the source of the default gallery in the [LocalAI repository](https://github.com/mudler/LocalAI/tree/master/gallery).
+If you want to build your own gallery, there is no documentation yet. However you can find the source of the default gallery in the [LocalAI repository](https://github.com/P3X-118/LocalAI/tree/master/gallery).
  {{% /notice %}}
 
 
@@ -149,7 +149,7 @@ curl $LOCALAI/models/apply -H "Content-Type: application/json" -d '{
 where:
 - `localai` is the repository. It is optional and can be omitted. If the repository is omitted LocalAI will search the model by name in all the repositories. In the case the same model name is present in both galleries the first match wins.
 - `bert-embeddings` is the model name in the gallery
-  (read its [config here](https://github.com/mudler/LocalAI/tree/master/gallery/blob/main/bert-embeddings.yaml)).
+  (read its [config here](https://github.com/P3X-118/LocalAI/tree/master/gallery/blob/main/bert-embeddings.yaml)).
 
 ### How to install a model not part of a gallery
 
@@ -237,7 +237,7 @@ YAML:
 
 {{% notice note %}}
 
-You can find already some open licensed models in the [LocalAI gallery](https://github.com/mudler/LocalAI/tree/master/gallery).
+You can find already some open licensed models in the [LocalAI gallery](https://github.com/P3X-118/LocalAI/tree/master/gallery).
 
 If you don't find the model in the gallery you can try to use the "base" model and provide an URL to LocalAI:
 
@@ -360,7 +360,7 @@ URL: https://github.com/EdVince/Stable-Diffusion-NCNN
 {{< tabs >}}
 {{% tab name="Prepare the model in runtime" %}}
 
-While the API is running, you can install the model by using the `/models/apply` endpoint and point it to the `stablediffusion` model in the [models-gallery](https://github.com/mudler/LocalAI/tree/master/gallery#image-generation-stable-diffusion):
+While the API is running, you can install the model by using the `/models/apply` endpoint and point it to the `stablediffusion` model in the [models-gallery](https://github.com/P3X-118/LocalAI/tree/master/gallery#image-generation-stable-diffusion):
 ```bash
 curl $LOCALAI/models/apply -H "Content-Type: application/json" -d '{         
      "url": "github:mudler/LocalAI/gallery/stablediffusion.yaml@master"
@@ -488,7 +488,7 @@ Returns an `uuid` and an `url` to follow up the state of the process:
 { "uuid":"251475c9-f666-11ed-95e0-9a8a4480ac58", "status":"http://localhost:8080/models/jobs/251475c9-f666-11ed-95e0-9a8a4480ac58"}
 ```
 
-To see a collection example of curated models definition files, see the [LocalAI repository](https://github.com/mudler/LocalAI/tree/master/gallery).
+To see a collection example of curated models definition files, see the [LocalAI repository](https://github.com/P3X-118/LocalAI/tree/master/gallery).
 
 #### Get model job state `/models/jobs/<uid>`
 

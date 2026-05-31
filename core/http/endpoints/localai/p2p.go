@@ -2,9 +2,9 @@ package localai
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/p2p"
-	"github.com/mudler/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/p2p"
+	"github.com/P3X-118/LocalAI/core/schema"
 )
 
 // ShowP2PNodes returns the P2P Nodes

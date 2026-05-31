@@ -107,4 +107,4 @@ Explore additional resources and community contributions:
 - [Examples to try from the CLI]({{% relref "getting-started/try-it-out" %}})
 - [Build LocalAI from source]({{% relref "installation/build" %}})
 - [Run models manually]({{% relref "getting-started/models" %}})
-- [Examples](https://github.com/mudler/LocalAI/tree/master/examples#examples)
+- [Examples](https://github.com/P3X-118/LocalAI/tree/master/examples#examples)

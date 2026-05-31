@@ -6,8 +6,8 @@ import (
 	"math"
 	"os"
 
-	"github.com/mudler/LocalAI/pkg/audio"
-	"github.com/mudler/LocalAI/pkg/sound"
+	"github.com/P3X-118/LocalAI/pkg/audio"
+	"github.com/P3X-118/LocalAI/pkg/sound"
 	"github.com/mudler/xlog"
 )
 

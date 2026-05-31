@@ -3,7 +3,7 @@ package application
 import (
 	"time"
 
-	"github.com/mudler/LocalAI/core/services"
+	"github.com/P3X-118/LocalAI/core/services"
 	"github.com/mudler/xlog"
 )
 

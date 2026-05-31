@@ -6,7 +6,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/mudler/LocalAI/pkg/downloader"
+	"github.com/P3X-118/LocalAI/pkg/downloader"
 )
 
 var weightExts = map[string]bool{

@@ -5,8 +5,8 @@ import (
 	"os"
 	"syscall"
 
-	cliContext "github.com/mudler/LocalAI/core/cli/context"
-	"github.com/mudler/LocalAI/pkg/system"
+	cliContext "github.com/P3X-118/LocalAI/core/cli/context"
+	"github.com/P3X-118/LocalAI/pkg/system"
 	"github.com/mudler/xlog"
 )
 

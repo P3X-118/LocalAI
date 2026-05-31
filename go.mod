@@ -1,4 +1,4 @@
-module github.com/mudler/LocalAI
+module github.com/P3X-118/LocalAI
 
 go 1.26.0
 

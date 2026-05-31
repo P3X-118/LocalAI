@@ -35,8 +35,8 @@ RANDOM := $(shell bash -c 'echo $$RANDOM')
 VERSION?=$(shell git describe --always --tags || echo "dev" )
 # go tool nm ./local-ai | grep Commit
 LD_FLAGS?=-s -w
-override LD_FLAGS += -X "github.com/mudler/LocalAI/internal.Version=$(VERSION)"
-override LD_FLAGS += -X "github.com/mudler/LocalAI/internal.Commit=$(shell git rev-parse HEAD)"
+override LD_FLAGS += -X "github.com/P3X-118/LocalAI/internal.Version=$(VERSION)"
+override LD_FLAGS += -X "github.com/P3X-118/LocalAI/internal.Commit=$(shell git rev-parse HEAD)"
 
 OPTIONAL_TARGETS?=
 

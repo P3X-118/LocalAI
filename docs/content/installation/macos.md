@@ -11,7 +11,7 @@ The easiest way to install LocalAI on macOS is using the DMG application.
 
 Download the latest DMG from GitHub releases:
 
-<a href="https://github.com/mudler/LocalAI/releases/latest/download/LocalAI.dmg">
+<a href="https://github.com/P3X-118/LocalAI/releases/latest/download/LocalAI.dmg">
   <img src="https://img.shields.io/badge/Download-macOS-blue?style=for-the-badge&logo=apple&logoColor=white" alt="Download LocalAI for macOS"/>
 </a>
 
@@ -26,9 +26,9 @@ Download the latest DMG from GitHub releases:
 
 > **Note**: The DMGs are not signed by Apple and may show as quarantined.
 >
-> **Workaround**: See [this issue](https://github.com/mudler/LocalAI/issues/6268) for details on how to bypass the quarantine.
+> **Workaround**: See [this issue](https://github.com/P3X-118/LocalAI/issues/6268) for details on how to bypass the quarantine.
 >
-> **Fix tracking**: The signing issue is being tracked in [this issue](https://github.com/mudler/LocalAI/issues/6244).
+> **Fix tracking**: The signing issue is being tracked in [this issue](https://github.com/P3X-118/LocalAI/issues/6244).
 
 ## Next Steps
 

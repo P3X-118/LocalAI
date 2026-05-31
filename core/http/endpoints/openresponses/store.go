@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mudler/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/schema"
 	"github.com/mudler/xlog"
 )
 

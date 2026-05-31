@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/config"
-	. "github.com/mudler/LocalAI/core/http/endpoints/localai"
-	"github.com/mudler/LocalAI/pkg/system"
+	"github.com/P3X-118/LocalAI/core/config"
+	. "github.com/P3X-118/LocalAI/core/http/endpoints/localai"
+	"github.com/P3X-118/LocalAI/pkg/system"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

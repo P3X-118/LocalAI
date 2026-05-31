@@ -46,7 +46,7 @@ Model sizes vary significantly depending on the model and quantization level:
 
 ### Benchmarking LocalAI and llama.cpp shows different results!
 
-LocalAI applies a set of defaults when loading models with the llama.cpp backend, one of these is mirostat sampling - while it achieves better results, it slows down the inference. You can disable this by setting `mirostat: 0` in the model config file. See also the advanced section ({{%relref "advanced/advanced-usage" %}}) for more information and [this issue](https://github.com/mudler/LocalAI/issues/2780).
+LocalAI applies a set of defaults when loading models with the llama.cpp backend, one of these is mirostat sampling - while it achieves better results, it slows down the inference. You can disable this by setting `mirostat: 0` in the model config file. See also the advanced section ({{%relref "advanced/advanced-usage" %}}) for more information and [this issue](https://github.com/P3X-118/LocalAI/issues/2780).
 
 ### What's the difference with Serge, or XXX?
 

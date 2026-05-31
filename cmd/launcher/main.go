@@ -6,8 +6,8 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/driver/desktop"
-	coreLauncher "github.com/mudler/LocalAI/cmd/launcher/internal"
-	"github.com/mudler/LocalAI/pkg/signals"
+	coreLauncher "github.com/P3X-118/LocalAI/cmd/launcher/internal"
+	"github.com/P3X-118/LocalAI/pkg/signals"
 )
 
 func main() {

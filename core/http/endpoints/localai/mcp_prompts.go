@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/config"
-	mcpTools "github.com/mudler/LocalAI/core/http/endpoints/mcp"
+	"github.com/P3X-118/LocalAI/core/config"
+	mcpTools "github.com/P3X-118/LocalAI/core/http/endpoints/mcp"
 )
 
 // MCPPromptsEndpoint returns the list of MCP prompts for a given model.

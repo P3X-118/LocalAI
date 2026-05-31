@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	hfapi "github.com/mudler/LocalAI/pkg/huggingface-api"
+	hfapi "github.com/P3X-118/LocalAI/pkg/huggingface-api"
 )
 
 var (

@@ -3,9 +3,9 @@ package services
 import (
 	"sync"
 
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/templates"
-	"github.com/mudler/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/templates"
+	"github.com/P3X-118/LocalAI/pkg/model"
 	"github.com/mudler/LocalAGI/services/skills"
 	"github.com/mudler/LocalAGI/webui/collections"
 	"github.com/mudler/xlog"

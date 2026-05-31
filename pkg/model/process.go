@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hpcloud/tail"
-	"github.com/mudler/LocalAI/pkg/signals"
+	"github.com/P3X-118/LocalAI/pkg/signals"
 	process "github.com/mudler/go-processmanager"
 	"github.com/mudler/xlog"
 )

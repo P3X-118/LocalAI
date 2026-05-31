@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 
-	pb "github.com/mudler/LocalAI/pkg/grpc/proto"
+	pb "github.com/P3X-118/LocalAI/pkg/grpc/proto"
 	"google.golang.org/grpc"
 )
 

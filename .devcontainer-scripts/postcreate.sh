@@ -4,7 +4,7 @@ cd /workspace
 
 # Get the files into the volume without a bind mount
 if [ ! -d ".git" ]; then
-    git clone https://github.com/mudler/LocalAI.git .
+    git clone https://github.com/P3X-118/LocalAI.git .
 else
     git fetch
 fi

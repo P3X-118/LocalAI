@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/application"
+	"github.com/P3X-118/LocalAI/core/application"
 	coreTypes "github.com/mudler/LocalAGI/core/types"
 	"github.com/mudler/xlog"
 	"github.com/sashabaranov/go-openai"

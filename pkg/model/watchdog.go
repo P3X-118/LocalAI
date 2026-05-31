@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mudler/LocalAI/pkg/xsysinfo"
+	"github.com/P3X-118/LocalAI/pkg/xsysinfo"
 	process "github.com/mudler/go-processmanager"
 	"github.com/mudler/xlog"
 )

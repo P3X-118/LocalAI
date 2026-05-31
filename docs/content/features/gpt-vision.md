@@ -8,7 +8,7 @@ url = "/features/gpt-vision/"
 
 LocalAI supports understanding images by using [LLaVA](https://llava.hliu.cc/), and implements the [GPT Vision API](https://platform.openai.com/docs/guides/vision) from OpenAI.
 
-![llava](https://github.com/mudler/LocalAI/assets/2420543/cb0a0897-3b58-4350-af66-e6f4387b58d3)
+![llava](https://github.com/P3X-118/LocalAI/assets/2420543/cb0a0897-3b58-4350-af66-e6f4387b58d3)
 
 ## Usage
 

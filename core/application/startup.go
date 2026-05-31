@@ -9,16 +9,16 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mudler/LocalAI/core/backend"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/gallery"
-	"github.com/mudler/LocalAI/core/http/auth"
-	"github.com/mudler/LocalAI/core/services"
-	coreStartup "github.com/mudler/LocalAI/core/startup"
-	"github.com/mudler/LocalAI/internal"
+	"github.com/P3X-118/LocalAI/core/backend"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/gallery"
+	"github.com/P3X-118/LocalAI/core/http/auth"
+	"github.com/P3X-118/LocalAI/core/services"
+	coreStartup "github.com/P3X-118/LocalAI/core/startup"
+	"github.com/P3X-118/LocalAI/internal"
 
-	"github.com/mudler/LocalAI/pkg/model"
-	"github.com/mudler/LocalAI/pkg/xsysinfo"
+	"github.com/P3X-118/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/pkg/xsysinfo"
 	"github.com/mudler/xlog"
 )
 

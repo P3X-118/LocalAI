@@ -30,7 +30,7 @@ enableEmoji = true
 
 [params]
   # Relearn theme parameters
-  editURL = 'https://github.com/mudler/LocalAI/edit/master/docs/content/'
+  editURL = 'https://github.com/P3X-118/LocalAI/edit/master/docs/content/'
   description = 'LocalAI documentation'
   author = 'Ettore Di Giacinto'
   showVisitedLinks = true
@@ -63,13 +63,13 @@ enableEmoji = true
 [[languages.en.menu.shortcuts]]
   name = '<i class="fas fa-fw fa-star"></i> Star us on GitHub'
   identifier = 'star-github'
-  url = 'https://github.com/mudler/LocalAI'
+  url = 'https://github.com/P3X-118/LocalAI'
   weight = 5
 
 [[languages.en.menu.shortcuts]]
   name = '<i class="fab fa-fw fa-github"></i> GitHub'
   identifier = 'github'
-  url = 'https://github.com/mudler/LocalAI'
+  url = 'https://github.com/P3X-118/LocalAI'
   weight = 10
 
 [[languages.en.menu.shortcuts]]

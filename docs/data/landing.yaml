@@ -44,7 +44,7 @@ hero:
   cta2Button:
     icon: code
     btnText: "View on GitHub"
-    url: "https://github.com/mudler/LocalAI"
+    url: "https://github.com/P3X-118/LocalAI"
 
   info: |
     **Drop-in replacement for OpenAI API** - modular suite of tools that work seamlessly together or independently. 
@@ -130,7 +130,7 @@ featureGrid:
       description: Active community support and regular updates. Contribute and help shape the future of LocalAI.
       ctaLink:
         text: learn more
-        url: https://github.com/mudler/LocalAI
+        url: https://github.com/P3X-118/LocalAI
 
 
 
@@ -156,7 +156,7 @@ featureGrid:
       description: MIT licensed. Free to use, modify, and distribute. Community contributions welcome.
       ctaLink:
         text: learn more
-        url: https://github.com/mudler/LocalAI
+        url: https://github.com/P3X-118/LocalAI
 
 imageText:
   enable: true

@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mudler/LocalAI/core/application"
-	cliContext "github.com/mudler/LocalAI/core/cli/context"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/http"
-	"github.com/mudler/LocalAI/core/p2p"
-	"github.com/mudler/LocalAI/internal"
-	"github.com/mudler/LocalAI/pkg/signals"
-	"github.com/mudler/LocalAI/pkg/system"
+	"github.com/P3X-118/LocalAI/core/application"
+	cliContext "github.com/P3X-118/LocalAI/core/cli/context"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/http"
+	"github.com/P3X-118/LocalAI/core/p2p"
+	"github.com/P3X-118/LocalAI/internal"
+	"github.com/P3X-118/LocalAI/pkg/signals"
+	"github.com/P3X-118/LocalAI/pkg/system"
 	"github.com/mudler/xlog"
 )
 

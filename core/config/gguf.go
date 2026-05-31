@@ -3,11 +3,11 @@ package config
 import (
 	"context"
 
-	"github.com/mudler/LocalAI/pkg/functions"
-	"github.com/mudler/LocalAI/pkg/grpc"
-	pb "github.com/mudler/LocalAI/pkg/grpc/proto"
-	"github.com/mudler/LocalAI/pkg/reasoning"
-	"github.com/mudler/LocalAI/pkg/xsysinfo"
+	"github.com/P3X-118/LocalAI/pkg/functions"
+	"github.com/P3X-118/LocalAI/pkg/grpc"
+	pb "github.com/P3X-118/LocalAI/pkg/grpc/proto"
+	"github.com/P3X-118/LocalAI/pkg/reasoning"
+	"github.com/P3X-118/LocalAI/pkg/xsysinfo"
 	"github.com/mudler/xlog"
 
 	gguf "github.com/gpustack/gguf-parser-go"

@@ -3,7 +3,7 @@ package functions
 import (
 	"strings"
 
-	"github.com/mudler/LocalAI/pkg/functions/peg"
+	"github.com/P3X-118/LocalAI/pkg/functions/peg"
 	"github.com/mudler/xlog"
 )
 

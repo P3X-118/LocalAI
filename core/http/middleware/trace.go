@@ -10,8 +10,8 @@ import (
 
 	"github.com/emirpasic/gods/v2/queues/circularbuffer"
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/application"
-	"github.com/mudler/LocalAI/core/http/auth"
+	"github.com/P3X-118/LocalAI/core/application"
+	"github.com/P3X-118/LocalAI/core/http/auth"
 	"github.com/mudler/xlog"
 )
 

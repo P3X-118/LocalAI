@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mudler/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/schema"
 )
 
 func TranscriptionResponse(tr *schema.TranscriptionResult, resFmt schema.TranscriptionResponseFormatType) string {

@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mudler/LocalAI/core/http/endpoints/openai/types"
-	"github.com/mudler/LocalAI/pkg/grpc"
-	pb "github.com/mudler/LocalAI/pkg/grpc/proto"
+	"github.com/P3X-118/LocalAI/core/http/endpoints/openai/types"
+	"github.com/P3X-118/LocalAI/pkg/grpc"
+	pb "github.com/P3X-118/LocalAI/pkg/grpc/proto"
 	"github.com/mudler/xlog"
 	"github.com/pion/rtp"
 	"github.com/pion/webrtc/v4"

@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	cliContext "github.com/mudler/LocalAI/core/cli/context"
-	"github.com/mudler/LocalAI/core/explorer"
-	"github.com/mudler/LocalAI/core/http"
-	"github.com/mudler/LocalAI/pkg/signals"
+	cliContext "github.com/P3X-118/LocalAI/core/cli/context"
+	"github.com/P3X-118/LocalAI/core/explorer"
+	"github.com/P3X-118/LocalAI/core/http"
+	"github.com/P3X-118/LocalAI/pkg/signals"
 	"github.com/mudler/xlog"
 )
 

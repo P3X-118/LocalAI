@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"strconv"
 
-	. "github.com/mudler/LocalAI/pkg/downloader"
+	. "github.com/P3X-118/LocalAI/pkg/downloader"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

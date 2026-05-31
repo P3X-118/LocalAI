@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/emirpasic/gods/v2/queues/circularbuffer"
-	"github.com/mudler/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/schema"
 	"github.com/mudler/xlog"
 )
 

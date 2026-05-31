@@ -3,7 +3,7 @@ package model
 import (
 	"sync"
 
-	grpc "github.com/mudler/LocalAI/pkg/grpc"
+	grpc "github.com/P3X-118/LocalAI/pkg/grpc"
 	process "github.com/mudler/go-processmanager"
 )
 

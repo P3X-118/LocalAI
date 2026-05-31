@@ -17,9 +17,9 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/mudler/LocalAI/pkg/oci"
-	"github.com/mudler/LocalAI/pkg/utils"
-	"github.com/mudler/LocalAI/pkg/xio"
+	"github.com/P3X-118/LocalAI/pkg/oci"
+	"github.com/P3X-118/LocalAI/pkg/utils"
+	"github.com/P3X-118/LocalAI/pkg/xio"
 	"github.com/mudler/xlog"
 )
 

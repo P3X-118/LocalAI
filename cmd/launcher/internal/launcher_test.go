@@ -10,7 +10,7 @@ import (
 
 	"fyne.io/fyne/v2/app"
 
-	launcher "github.com/mudler/LocalAI/cmd/launcher/internal"
+	launcher "github.com/P3X-118/LocalAI/cmd/launcher/internal"
 )
 
 var _ = Describe("Launcher", func() {

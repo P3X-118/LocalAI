@@ -1,7 +1,7 @@
 package xsync_test
 
 import (
-	. "github.com/mudler/LocalAI/pkg/xsync"
+	. "github.com/P3X-118/LocalAI/pkg/xsync"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

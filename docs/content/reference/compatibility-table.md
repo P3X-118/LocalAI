@@ -77,7 +77,7 @@ LocalAI will attempt to automatically load models which are not explicitly confi
 |---------|-------------|-------------|
 | [RF-DETR](https://github.com/roboflow/rf-detr) | Real-time transformer-based object detection | CPU, CUDA 12/13, Intel, Metal, Jetson L4T |
 | [rerankers](https://github.com/AnswerDotAI/rerankers) | Document reranking for RAG | CUDA 12/13, ROCm, Intel, Metal |
-| [local-store](https://github.com/mudler/LocalAI) | Local vector database for embeddings | CPU, Metal |
+| [local-store](https://github.com/P3X-118/LocalAI) | Local vector database for embeddings | CPU, Metal |
 | [Silero VAD](https://github.com/snakers4/silero-vad) | Voice Activity Detection | CPU |
 | [TRL](https://github.com/huggingface/trl) | Fine-tuning (SFT, DPO, GRPO, RLOO, KTO, ORPO) | CPU, CUDA 12/13 |
 | [llama.cpp quantization](https://github.com/ggml-org/llama.cpp) | HuggingFace → GGUF model conversion and quantization | CPU, Metal |
