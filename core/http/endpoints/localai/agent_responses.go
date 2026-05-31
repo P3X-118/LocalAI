@@ -50,8 +50,11 @@ func AgentResponsesInterceptor(app *application.Application) echo.MiddlewareFunc
 				return next(c)
 			}
 
-			// Check if this model name is an agent
-			ag := svc.GetAgent(req.Model)
+			// Check if this model name is an agent (scoped to caller's user ID;
+			// agents are stored under "userID:name" keys so a bare GetAgent
+			// would never match agents created via the authenticated API).
+			userID := effectiveUserID(c)
+			ag := svc.GetAgentForUser(userID, req.Model)
 			if ag == nil {
 				return next(c)
 			}
