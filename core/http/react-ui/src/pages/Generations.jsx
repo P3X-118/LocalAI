@@ -3,6 +3,7 @@ import { useOutletContext, useNavigate } from 'react-router-dom'
 import { generationsApi } from '../utils/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ConfirmDialog from '../components/ConfirmDialog'
+import RemixDialog from '../components/RemixDialog'
 
 const TABS = [
   { key: '',            label: 'All',    icon: 'fa-th' },
@@ -63,6 +64,7 @@ export default function Generations() {
   const [detailItem, setDetailItem] = useState(null)
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState({}) // {id: item}
+  const [remixItem, setRemixItem] = useState(null)
 
   // Helper: produce a same-origin path for an artifact suitable for the
   // backend's processImageFile (which downloads http(s) URLs server-side).
@@ -169,27 +171,41 @@ export default function Generations() {
       </div>
 
       {selectMode && (
-        <div className="gen-select-bar">
-          <span className="gen-select-count">{Object.keys(selected).length} selected</span>
+        <div className="gen-select-bar gen-select-bar-sticky">
+          <div className="gen-select-bar-row">
+            <span className="gen-select-count">{Object.keys(selected).length} selected</span>
+            <button
+              className="btn gen-select-cancel"
+              onClick={() => { setSelectMode(false); setSelected({}) }}
+              aria-label="Exit selection mode"
+            >
+              <i className="fas fa-xmark" /> Done
+            </button>
+          </div>
           <div className="gen-select-actions">
             <button
-              className="btn"
+              className="btn gen-select-action"
               onClick={() => sendToImgGen('source')}
               disabled={!Object.keys(selected).length}
-              title="Use the first selected image as the img2img source"
             >
-              <i className="fas fa-arrow-right-arrow-left" /> Use as source (img2img)
+              <i className="fas fa-arrow-right-arrow-left" />
+              <span>img2img source</span>
             </button>
             <button
-              className="btn"
+              className="btn gen-select-action"
               onClick={() => sendToImgGen('refs')}
               disabled={!Object.keys(selected).length}
-              title="Use all selected images as reference images"
             >
-              <i className="fas fa-layer-group" /> Use as references
+              <i className="fas fa-layer-group" />
+              <span>Use as references</span>
             </button>
-            <button className="btn" onClick={() => setSelected({})} disabled={!Object.keys(selected).length}>
-              Clear
+            <button
+              className="btn gen-select-action"
+              onClick={() => setSelected({})}
+              disabled={!Object.keys(selected).length}
+            >
+              <i className="fas fa-eraser" />
+              <span>Clear</span>
             </button>
           </div>
         </div>
@@ -233,13 +249,35 @@ export default function Generations() {
                     <i className={`fas ${isPicked ? 'fa-check-circle' : 'fa-circle'}`} />
                   </span>
                 )}
-                <button
-                  className="gen-card-delete"
-                  title="Delete"
-                  onClick={(e) => { e.stopPropagation(); setConfirmDelete(item) }}
-                >
-                  <i className="fas fa-trash" />
-                </button>
+                {!selectMode && (
+                  <div className="gen-card-actions">
+                    {item.type === 'image' && (
+                      <button
+                        className="gen-card-action"
+                        title="Remix — edit prompt + params and re-generate"
+                        onClick={(e) => { e.stopPropagation(); setRemixItem(item) }}
+                      >
+                        <i className="fas fa-wand-magic-sparkles" />
+                      </button>
+                    )}
+                    {item.type === 'image' && (
+                      <button
+                        className="gen-card-action"
+                        title="Use as img2img source"
+                        onClick={(e) => { e.stopPropagation(); navigate('/app/image', { state: { sourceImage: urlForItem(item) } }) }}
+                      >
+                        <i className="fas fa-arrow-right-arrow-left" />
+                      </button>
+                    )}
+                    <button
+                      className="gen-card-action gen-card-action-danger"
+                      title="Delete"
+                      onClick={(e) => { e.stopPropagation(); setConfirmDelete(item) }}
+                    >
+                      <i className="fas fa-trash" />
+                    </button>
+                  </div>
+                )}
               </div>
             )
           })}
@@ -279,8 +317,15 @@ export default function Generations() {
               </div>
               {detailItem.output_url && (
                 <div className="gen-detail-actions">
-                  <a className="btn btn-primary" href={detailItem.output_url} target="_blank" rel="noreferrer">Open in new tab</a>
-                  <a className="btn" href={detailItem.output_url} download>Download</a>
+                  {detailItem.type === 'image' && (
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => { setRemixItem(detailItem); setDetailItem(null) }}
+                      title="Edit the prompt + params and regenerate"
+                    >
+                      <i className="fas fa-wand-magic-sparkles" /> Remix
+                    </button>
+                  )}
                   {detailItem.type === 'image' && (
                     <>
                       <button
@@ -299,6 +344,8 @@ export default function Generations() {
                       </button>
                     </>
                   )}
+                  <a className="btn" href={detailItem.output_url} target="_blank" rel="noreferrer">Open</a>
+                  <a className="btn" href={detailItem.output_url} download>Download</a>
                 </div>
               )}
             </div>
@@ -314,6 +361,12 @@ export default function Generations() {
         danger
         onConfirm={() => confirmDelete && handleDelete(confirmDelete.id)}
         onCancel={() => setConfirmDelete(null)}
+      />
+
+      <RemixDialog
+        open={!!remixItem}
+        item={remixItem}
+        onClose={() => setRemixItem(null)}
       />
     </div>
   )
