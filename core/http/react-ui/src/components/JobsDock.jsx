@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useMediaJobs, MEDIA_JOB_TERMINAL_STATUSES } from '../hooks/useMediaJobs'
+import GpuGauge from './GpuGauge'
 
 const STATUS_LABEL = {
   queued:    { label: 'Queued',    cls: 'badge-pending' },
@@ -73,6 +74,9 @@ export default function JobsDock() {
         >
           <i className="fas fa-chevron-down" />
         </button>
+      </div>
+      <div className="jobs-dock-gauge">
+        <GpuGauge />
       </div>
       <div className="jobs-dock-list">
         {jobs.slice(0, 6).map(j => {

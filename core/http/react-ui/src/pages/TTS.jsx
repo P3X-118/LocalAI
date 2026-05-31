@@ -4,6 +4,7 @@ import ModelSelector from '../components/ModelSelector'
 import { CAP_TTS } from '../utils/capabilities'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
+import GpuGauge from '../components/GpuGauge'
 import { generationsApi } from '../utils/api'
 import { useMediaJobs } from '../hooks/useMediaJobs'
 
@@ -59,8 +60,9 @@ export default function TTS() {
   return (
     <div className="media-layout">
       <div className="media-controls">
-        <div className="page-header">
+        <div className="page-header media-page-header">
           <h1 className="page-title"><i className="fas fa-headphones" style={{ marginRight: 8, color: 'var(--color-accent)' }} />Text to Speech</h1>
+          <GpuGauge />
         </div>
 
         <form onSubmit={handleGenerate}>

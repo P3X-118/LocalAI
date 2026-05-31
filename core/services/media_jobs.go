@@ -258,11 +258,43 @@ func (s *MediaJobService) runJob(id string) {
 		cancel()
 	}()
 
-	now := time.Now().UTC()
+	startedAt := time.Now().UTC()
 	s.transition(id, func(j *schema.MediaJob) {
 		j.Status = schema.MediaJobRunning
-		j.StartedAt = &now
+		j.StartedAt = &startedAt
 	})
+
+	// Background progress estimator: while the worker is blocked on the
+	// loopback HTTP call (which gives us no intermediate signal), tick every
+	// 500ms and update Progress = elapsed / expected, capped at 0.95 so the
+	// bar can never "complete" before the real result arrives. The final
+	// transition (completed/failed) sets Progress to 1.0 / 0.
+	expected := expectedDurationFor(j.Type, j.Request)
+	estimatorDone := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(500 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-estimatorDone:
+				return
+			case <-ticker.C:
+				elapsed := time.Since(startedAt).Seconds()
+				p := elapsed / expected.Seconds()
+				if p > 0.95 {
+					p = 0.95
+				}
+				s.transition(id, func(j *schema.MediaJob) {
+					if j.Status == schema.MediaJobRunning {
+						j.Progress = p
+					}
+				})
+			}
+		}
+	}()
+	defer close(estimatorDone)
 
 	// Loopback POST to the OpenAI-compatible sync endpoint. The sync handler
 	// already writes the sidecar (Phase 1) so we just need to pluck the
@@ -275,7 +307,7 @@ func (s *MediaJobService) runJob(id string) {
 
 	beforeMtime := newestSidecarMtime(s.history.DirsForType(j.Type))
 
-	respBody, err := s.loopbackPost(ctx, urlPath, j.Request, j.UserID)
+	respBody, err := s.loopbackPost(ctx, urlPath, j.Request, j.UserID, id)
 	if err != nil {
 		s.fail(id, err)
 		return
@@ -294,7 +326,7 @@ func (s *MediaJobService) runJob(id string) {
 	xlog.Debug("media job completed", "id", id, "artifact", artifactID, "bytes", len(respBody))
 }
 
-func (s *MediaJobService) loopbackPost(ctx context.Context, urlPath string, body json.RawMessage, userID string) ([]byte, error) {
+func (s *MediaJobService) loopbackPost(ctx context.Context, urlPath string, body json.RawMessage, userID, jobID string) ([]byte, error) {
 	addr := s.appConfig.ApiKeys // re-use; first key is used for self-auth
 	// Build URL: localhost + LOCALAI_ADDRESS port
 	host := "127.0.0.1"
@@ -319,6 +351,10 @@ func (s *MediaJobService) loopbackPost(ctx context.Context, urlPath string, body
 	if userID != "" {
 		req.Header.Set("X-LocalAI-User", userID)
 	}
+	// Pass the job ID so the sync handler's sidecar links back to the job.
+	if jobID != "" {
+		req.Header.Set("X-LocalAI-Job-ID", jobID)
+	}
 
 	cli := &http.Client{Timeout: 30 * time.Minute}
 	resp, err := cli.Do(req)
@@ -335,6 +371,56 @@ func (s *MediaJobService) loopbackPost(ctx context.Context, urlPath string, body
 		return b, fmt.Errorf("loopback %s returned %d: %s", urlPath, resp.StatusCode, string(excerpt))
 	}
 	return b, nil
+}
+
+// expectedDurationFor returns a wall-clock estimate used to drive the progress
+// bar while the worker blocks on the sync loopback. The numbers are tuned for
+// Tegra Orin with the installed model lineup (glm-edge-4b chat, qwen3-embed,
+// dreamshaper / sd-ggml for images, piper for TTS). Returning the wrong number
+// here just makes the bar move at a different rate — it never invalidates the
+// outcome (the final transition sets Progress to 1.0 regardless).
+//
+// For images we also scale up with size and step count when those fields are
+// in the request body, since SD-GGML's wall-clock is roughly linear in pixels
+// * steps.
+func expectedDurationFor(t schema.MediaType, body json.RawMessage) time.Duration {
+	base := map[schema.MediaType]time.Duration{
+		schema.MediaImage:      10 * time.Second,
+		schema.MediaVideo:      90 * time.Second,
+		schema.MediaAudioTTS:   6 * time.Second,
+		schema.MediaAudioSound: 30 * time.Second,
+	}[t]
+	if base == 0 {
+		base = 15 * time.Second
+	}
+	if t == schema.MediaImage {
+		var probe struct {
+			Size string `json:"size"`
+			Step int    `json:"step"`
+			N    int    `json:"n"`
+		}
+		if json.Unmarshal(body, &probe) == nil {
+			// Steps: linear scale from 25 (default). Size: scale by area.
+			scale := 1.0
+			if probe.Step > 0 {
+				scale *= float64(probe.Step) / 25.0
+			}
+			if probe.Size != "" {
+				var w, h int
+				_, _ = fmt.Sscanf(probe.Size, "%dx%d", &w, &h)
+				if w > 0 && h > 0 {
+					scale *= float64(w*h) / float64(512*512)
+				}
+			}
+			if probe.N > 1 {
+				scale *= float64(probe.N)
+			}
+			if scale > 0.25 && scale < 50 {
+				base = time.Duration(float64(base) * scale)
+			}
+		}
+	}
+	return base
 }
 
 func endpointPathForMediaType(t schema.MediaType) (string, error) {

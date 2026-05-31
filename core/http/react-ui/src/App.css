@@ -4114,3 +4114,33 @@ a {
   min-width: 20px;
   text-align: center;
 }
+
+/* GpuGauge mounted in JobsDock header — show as a strip under the title row */
+.jobs-dock-gauge {
+  padding: 6px 12px 0;
+  border-top: 1px solid var(--color-border, #2a2a2a);
+  display: flex;
+  align-items: center;
+  font-size: 0.72rem;
+}
+.jobs-dock-gauge .gpu-gauge {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.jobs-dock-gauge .gpu-gauge-bar { flex: 1; max-width: 140px; }
+.jobs-dock-gauge:empty { display: none; }
+
+/* Studio page headers (Image / Video / TTS / Sound) — gauge on the right */
+.media-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md, 16px);
+  flex-wrap: wrap;
+}
+.media-page-header .gpu-gauge {
+  font-size: 0.78rem;
+  opacity: 0.95;
+}
