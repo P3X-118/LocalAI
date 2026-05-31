@@ -7,13 +7,14 @@ import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
 import GpuGauge from '../components/GpuGauge'
 import { generationsApi } from '../utils/api'
 import { useMediaJobs } from '../hooks/useMediaJobs'
+import { usePersistedState } from '../hooks/usePersistedState'
 
 export default function TTS() {
   const { model: urlModel } = useParams()
   const { addToast } = useOutletContext()
   const { jobs, submit } = useMediaJobs()
-  const [model, setModel] = useState(urlModel || '')
-  const [text, setText] = useState('')
+  const [model, setModel] = usePersistedState('localai.studio.tts.model', urlModel || '')
+  const [text, setText] = usePersistedState('localai.studio.tts.text', '')
   const [error, setError] = useState(null)
   const [audioUrl, setAudioUrl] = useState(null)
   const [activeJobId, setActiveJobId] = useState(null)

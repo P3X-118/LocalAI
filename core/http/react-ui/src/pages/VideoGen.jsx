@@ -7,6 +7,7 @@ import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
 import GpuGauge from '../components/GpuGauge'
 import { fileToBase64, generationsApi } from '../utils/api'
 import { useMediaJobs } from '../hooks/useMediaJobs'
+import { usePersistedState } from '../hooks/usePersistedState'
 
 const SIZES = ['256x256', '512x512', '768x768', '1024x1024']
 
@@ -14,16 +15,16 @@ export default function VideoGen() {
   const { model: urlModel } = useParams()
   const { addToast } = useOutletContext()
   const { jobs, submit } = useMediaJobs()
-  const [model, setModel] = useState(urlModel || '')
-  const [prompt, setPrompt] = useState('')
-  const [negativePrompt, setNegativePrompt] = useState('')
-  const [size, setSize] = useState('512x512')
-  const [seconds, setSeconds] = useState('')
-  const [fps, setFps] = useState('16')
-  const [frames, setFrames] = useState('')
-  const [steps, setSteps] = useState('')
-  const [seed, setSeed] = useState('')
-  const [cfgScale, setCfgScale] = useState('')
+  const [model, setModel] = usePersistedState('localai.studio.video.model', urlModel || '')
+  const [prompt, setPrompt] = usePersistedState('localai.studio.video.prompt', '')
+  const [negativePrompt, setNegativePrompt] = usePersistedState('localai.studio.video.negative', '')
+  const [size, setSize] = usePersistedState('localai.studio.video.size', '512x512')
+  const [seconds, setSeconds] = usePersistedState('localai.studio.video.seconds', '')
+  const [fps, setFps] = usePersistedState('localai.studio.video.fps', '16')
+  const [frames, setFrames] = usePersistedState('localai.studio.video.frames', '')
+  const [steps, setSteps] = usePersistedState('localai.studio.video.steps', '')
+  const [seed, setSeed] = usePersistedState('localai.studio.video.seed', '')
+  const [cfgScale, setCfgScale] = usePersistedState('localai.studio.video.cfg', '')
   const [error, setError] = useState(null)
   const [videos, setVideos] = useState([])
   const [showAdvanced, setShowAdvanced] = useState(false)

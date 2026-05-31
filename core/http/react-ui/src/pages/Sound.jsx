@@ -7,24 +7,25 @@ import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
 import GpuGauge from '../components/GpuGauge'
 import { generationsApi } from '../utils/api'
 import { useMediaJobs } from '../hooks/useMediaJobs'
+import { usePersistedState } from '../hooks/usePersistedState'
 
 export default function Sound() {
   const { model: urlModel } = useParams()
   const { addToast } = useOutletContext()
   const { jobs, submit } = useMediaJobs()
-  const [model, setModel] = useState(urlModel || '')
-  const [mode, setMode] = useState('simple')
-  const [text, setText] = useState('')
-  const [instrumental, setInstrumental] = useState(false)
-  const [vocalLanguage, setVocalLanguage] = useState('')
-  const [caption, setCaption] = useState('')
-  const [lyrics, setLyrics] = useState('')
-  const [think, setThink] = useState(false)
-  const [bpm, setBpm] = useState('')
-  const [duration, setDuration] = useState('')
-  const [keyscale, setKeyscale] = useState('')
-  const [language, setLanguage] = useState('')
-  const [timesignature, setTimesignature] = useState('')
+  const [model, setModel] = usePersistedState('localai.studio.sound.model', urlModel || '')
+  const [mode, setMode] = usePersistedState('localai.studio.sound.mode', 'simple')
+  const [text, setText] = usePersistedState('localai.studio.sound.text', '')
+  const [instrumental, setInstrumental] = usePersistedState('localai.studio.sound.instrumental', false)
+  const [vocalLanguage, setVocalLanguage] = usePersistedState('localai.studio.sound.vocalLang', '')
+  const [caption, setCaption] = usePersistedState('localai.studio.sound.caption', '')
+  const [lyrics, setLyrics] = usePersistedState('localai.studio.sound.lyrics', '')
+  const [think, setThink] = usePersistedState('localai.studio.sound.think', false)
+  const [bpm, setBpm] = usePersistedState('localai.studio.sound.bpm', '')
+  const [duration, setDuration] = usePersistedState('localai.studio.sound.duration', '')
+  const [keyscale, setKeyscale] = usePersistedState('localai.studio.sound.keyscale', '')
+  const [language, setLanguage] = usePersistedState('localai.studio.sound.language', '')
+  const [timesignature, setTimesignature] = usePersistedState('localai.studio.sound.timesig', '')
   const [error, setError] = useState(null)
   const [audioUrl, setAudioUrl] = useState(null)
   const [activeJobId, setActiveJobId] = useState(null)

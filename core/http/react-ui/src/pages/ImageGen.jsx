@@ -8,6 +8,7 @@ import GpuGauge from '../components/GpuGauge'
 import ImagePicker from '../components/ImagePicker'
 import { generationsApi } from '../utils/api'
 import { useMediaJobs } from '../hooks/useMediaJobs'
+import { usePersistedState } from '../hooks/usePersistedState'
 
 const SIZES = ['256x256', '512x512', '768x768', '1024x1024']
 
@@ -16,13 +17,13 @@ export default function ImageGen() {
   const { addToast } = useOutletContext()
   const { jobs, submit } = useMediaJobs()
   const location = useLocation()
-  const [model, setModel] = useState(urlModel || '')
-  const [prompt, setPrompt] = useState('')
-  const [negativePrompt, setNegativePrompt] = useState('')
-  const [size, setSize] = useState('512x512')
-  const [count, setCount] = useState(1)
-  const [steps, setSteps] = useState('')
-  const [seed, setSeed] = useState('')
+  const [model, setModel] = usePersistedState('localai.studio.image.model', urlModel || '')
+  const [prompt, setPrompt] = usePersistedState('localai.studio.image.prompt', '')
+  const [negativePrompt, setNegativePrompt] = usePersistedState('localai.studio.image.negative', '')
+  const [size, setSize] = usePersistedState('localai.studio.image.size', '512x512')
+  const [count, setCount] = usePersistedState('localai.studio.image.count', 1)
+  const [steps, setSteps] = usePersistedState('localai.studio.image.steps', '')
+  const [seed, setSeed] = usePersistedState('localai.studio.image.seed', '')
   const [error, setError] = useState(null)
   const [images, setImages] = useState([])
   const [showAdvanced, setShowAdvanced] = useState(false)

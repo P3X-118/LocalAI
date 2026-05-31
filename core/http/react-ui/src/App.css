@@ -4504,3 +4504,52 @@ a {
   .remix-params { grid-template-columns: 1fr 1fr; }
   .remix-preview img { width: 72px; height: 72px; }
 }
+
+/* ─── Generations: full-width labeled action bar on mobile ─── */
+@media (max-width: 640px) {
+  .gen-card-actions {
+    position: static;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    display: flex;
+    border-top: 1px solid var(--color-border, #2a2a2a);
+  }
+  .gen-card-actions .gen-card-action {
+    flex: 1;
+    width: auto;
+    height: 44px;
+    border-radius: 0;
+    border-right: 1px solid var(--color-border, #2a2a2a);
+    font-size: 0.95rem;
+    color: var(--color-text, #e8e8e8);
+  }
+  .gen-card-actions .gen-card-action:last-child { border-right: none; }
+  .gen-card-actions .gen-card-action:hover {
+    background: rgba(108, 184, 255, 0.10);
+  }
+  .gen-card-actions .gen-card-action-danger:hover {
+    background: rgba(255, 90, 90, 0.18);
+  }
+  /* When card-actions becomes a bottom bar, make sure body padding stays tight */
+  .gen-card-body { padding-bottom: 4px; }
+}
+
+/* Always-on iOS auto-zoom defense for the new dialogs (in case the
+   1023px breakpoint rule misses anything I introduced). Applies only on
+   touch viewports per @supports. */
+@supports (-webkit-touch-callout: none) {
+  .image-picker input,
+  .image-picker textarea,
+  .image-picker select,
+  .image-picker .input,
+  .image-picker .textarea,
+  .remix-dialog input,
+  .remix-dialog textarea,
+  .remix-dialog select,
+  .remix-dialog .input,
+  .remix-dialog .textarea,
+  .remix-dialog .model-selector {
+    font-size: 16px;
+  }
+}
