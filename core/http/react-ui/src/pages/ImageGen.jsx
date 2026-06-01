@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useOutletContext, useLocation } from 'react-router-dom'
-import ModelSelector from '../components/ModelSelector'
+import MultiModelSelector from '../components/MultiModelSelector'
 import { CAP_IMAGE } from '../utils/capabilities'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
@@ -11,13 +11,14 @@ import { useMediaJobs } from '../hooks/useMediaJobs'
 import { usePersistedState } from '../hooks/usePersistedState'
 
 const SIZES = ['256x256', '512x512', '768x768', '1024x1024']
+const COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 export default function ImageGen() {
   const { model: urlModel } = useParams()
   const { addToast } = useOutletContext()
   const { jobs, submit } = useMediaJobs()
   const location = useLocation()
-  const [model, setModel] = usePersistedState('localai.studio.image.model', urlModel || '')
+  const [models, setModels] = usePersistedState('localai.studio.image.models', urlModel ? [urlModel] : [])
   const [prompt, setPrompt] = usePersistedState('localai.studio.image.prompt', '')
   const [negativePrompt, setNegativePrompt] = usePersistedState('localai.studio.image.negative', '')
   const [size, setSize] = usePersistedState('localai.studio.image.size', '512x512')
@@ -25,12 +26,12 @@ export default function ImageGen() {
   const [steps, setSteps] = usePersistedState('localai.studio.image.steps', '')
   const [seed, setSeed] = usePersistedState('localai.studio.image.seed', '')
   const [error, setError] = useState(null)
-  const [images, setImages] = useState([])
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showImageInputs, setShowImageInputs] = useState(false)
   const [sourceImage, setSourceImage] = useState(null)
   const [refImages, setRefImages] = useState([])
-  const [activeJobId, setActiveJobId] = useState(null)
+  const [batchIds, setBatchIds] = useState([])      // job IDs from the latest Generate
+  const [batchImages, setBatchImages] = useState({}) // { [jobId]: { url } } as they complete
   const [sourcePicker, setSourcePicker] = useState(false)
   const [refPicker, setRefPicker] = useState(false)
 
@@ -51,47 +52,62 @@ export default function ImageGen() {
     }
   }, [location.state])
 
-  // Mirror this page's pending job from the global jobs map.
-  const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null
-  const loading = activeJob && (activeJob.status === 'queued' || activeJob.status === 'running')
+  // This Generate's jobs, mirrored from the global jobs map.
+  const batchJobs = useMemo(() => jobs.filter(j => batchIds.includes(j.id)), [jobs, batchIds])
+  const completedCount = batchJobs.filter(j => j.status === 'completed').length
+  const anyActive = batchJobs.some(j => j.status === 'queued' || j.status === 'running')
+  const loading = anyActive
 
-  // When our job completes, look up the resulting artifact and show it inline.
+  // As each batch job completes, pull its artifact URL into the inline preview.
   useEffect(() => {
-    if (!activeJob || activeJob.status !== 'completed' || !activeJob.artifact_id) return
-    let cancelled = false
-    generationsApi.get(activeJob.artifact_id).then(a => {
-      if (cancelled) return
-      if (a?.output_url) setImages([{ url: a.output_url }])
-    }).catch(() => {})
-    return () => { cancelled = true }
-  }, [activeJob?.status, activeJob?.artifact_id])
+    batchJobs.forEach(j => {
+      if (j.status === 'completed' && j.artifact_id && !batchImages[j.id]) {
+        generationsApi.get(j.artifact_id).then(a => {
+          if (a?.output_url) setBatchImages(prev => ({ ...prev, [j.id]: { url: a.output_url } }))
+        }).catch(() => {})
+      }
+    })
+  }, [batchJobs, batchImages])
 
-  // Surface failures from the job into the page error display.
+  // Surface the first failure from the batch into the page error display.
   useEffect(() => {
-    if (activeJob && activeJob.status === 'failed') setError(activeJob.error || 'generation failed')
-  }, [activeJob?.status, activeJob?.error])
+    const failed = batchJobs.find(j => j.status === 'failed')
+    if (failed) setError(failed.error || 'generation failed')
+  }, [batchJobs])
+
+  const previewImages = Object.values(batchImages)
 
   const handleGenerate = async (e) => {
     e.preventDefault()
     if (!prompt.trim()) { addToast('Please enter a prompt', 'warning'); return }
-    if (!model) { addToast('Please select a model', 'warning'); return }
+    if (!models.length) { addToast('Please select at least one model', 'warning'); return }
 
     setError(null)
-    setImages([])
+    setBatchImages({})
 
     let combinedPrompt = prompt.trim()
     if (negativePrompt.trim()) combinedPrompt += '|' + negativePrompt.trim()
 
-    const body = { model, prompt: combinedPrompt, n: count, size }
-    if (steps) body.step = parseInt(steps)
-    if (seed) body.seed = parseInt(seed)
-    if (sourceImage) body.file = sourceImage
-    if (refImages.length > 0) body.ref_images = refImages
+    const base = { prompt: combinedPrompt, n: 1, size }
+    if (steps) base.step = parseInt(steps)
+    if (seed) base.seed = parseInt(seed)
+    if (sourceImage) base.file = sourceImage
+    if (refImages.length > 0) base.ref_images = refImages
+
+    // One background job per model, repeated `count` times.
+    const bodies = []
+    for (const model of models) {
+      for (let i = 0; i < count; i++) bodies.push({ ...base, model })
+    }
 
     try {
-      const job = await submit('image', body)
-      setActiveJobId(job.id)
-      addToast('Generation queued — track progress in the dock', 'info')
+      const created = await Promise.all(bodies.map(b => submit('image', b)))
+      setBatchIds(created.map(j => j.id))
+      const total = created.length
+      addToast(
+        `Queued ${total} generation${total > 1 ? 's' : ''}${models.length > 1 ? ` across ${models.length} models` : ''} — track them in the Queue tab`,
+        'info'
+      )
     } catch (err) {
       setError(err.message)
     }
@@ -124,8 +140,8 @@ export default function ImageGen() {
 
         <form onSubmit={handleGenerate}>
           <div className="form-group">
-            <label className="form-label">Model</label>
-            <ModelSelector value={model} onChange={setModel} capability={CAP_IMAGE} />
+            <label className="form-label">Models <span style={{ color: 'var(--color-text-muted)', fontWeight: 400, fontSize: '0.75rem' }}>— add several to fan out</span></label>
+            <MultiModelSelector value={models} onChange={setModels} capability={CAP_IMAGE} />
           </div>
           <div className="form-group">
             <label className="form-label">Prompt</label>
@@ -144,8 +160,10 @@ export default function ImageGen() {
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Count (1-4)</label>
-              <input className="input" type="number" min="1" max="4" value={count} onChange={(e) => setCount(parseInt(e.target.value) || 1)} />
+              <label className="form-label">Count (per model)</label>
+              <select className="model-selector" value={count} onChange={(e) => setCount(parseInt(e.target.value, 10))} style={{ width: '100%' }}>
+                {COUNTS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
           </div>
 
@@ -154,8 +172,8 @@ export default function ImageGen() {
           </div>
           {showAdvanced && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)' }}>
-              <div className="form-group"><label className="form-label">Steps</label><input className="input" type="number" value={steps} onChange={(e) => setSteps(e.target.value)} placeholder="20" /></div>
-              <div className="form-group"><label className="form-label">Seed</label><input className="input" type="number" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="Random" /></div>
+              <div className="form-group"><label className="form-label">Steps</label><input className="input" type="number" value={steps} onFocus={(e) => e.target.select()} onChange={(e) => setSteps(e.target.value)} placeholder="20" /></div>
+              <div className="form-group"><label className="form-label">Seed</label><input className="input" type="number" value={seed} onFocus={(e) => e.target.select()} onChange={(e) => setSeed(e.target.value)} placeholder="Random" /></div>
             </div>
           )}
 
@@ -199,29 +217,35 @@ export default function ImageGen() {
           )}
 
           <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
-            {loading ? <><LoadingSpinner size="sm" /> Generating...</> : <><i className="fas fa-wand-magic-sparkles" /> Generate</>}
+            {loading ? <><LoadingSpinner size="sm" /> Generating {completedCount}/{batchJobs.length}…</> : <><i className="fas fa-wand-magic-sparkles" /> Generate{models.length * count > 1 ? ` ${models.length * count}` : ''}</>}
           </button>
         </form>
       </div>
 
       <div className="media-preview">
         <div className="media-result">
-          {loading ? (
-            <LoadingSpinner size="lg" />
+          {batchJobs.length > 0 ? (
+            <div className="media-result-stack">
+              <div className="media-batch-status">
+                {anyActive ? <LoadingSpinner size="sm" /> : <i className="fas fa-circle-check" style={{ color: 'var(--color-success, #6dd47d)' }} />}
+                <span>{completedCount} / {batchJobs.length} done</span>
+              </div>
+              {previewImages.length > 0 && (
+                <div className="media-result-grid">
+                  {previewImages.map((img, i) => (
+                    <div key={i}>
+                      <img src={img.url} alt={prompt} style={{ width: '100%', borderRadius: 'var(--radius-md)' }} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : error ? (
             <ErrorWithTraceLink message={error} />
-          ) : images.length > 0 ? (
-            <div className="media-result-grid">
-              {images.map((img, i) => (
-                <div key={i}>
-                  <img src={img.url || `data:image/png;base64,${img.b64_json}`} alt={prompt} style={{ width: '100%', borderRadius: 'var(--radius-md)' }} />
-                </div>
-              ))}
-            </div>
           ) : (
             <div style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>
               <i className="fas fa-image" style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)', opacity: 0.4 }} />
-              <p>Generated images will appear here</p>
+              <p>Generated images will appear here — and in the Queue tab as they run</p>
             </div>
           )}
         </div>

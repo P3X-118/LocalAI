@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { generationsApi, fileToBase64 } from '../utils/api'
+import { useSwipeDismiss } from '../hooks/useSwipeDismiss'
 
 // ImagePicker — modal that lets the user provide one or many images from any of:
 //   - Upload (local file or directory)
@@ -28,6 +29,7 @@ export default function ImagePicker({ open, multi = false, title, onClose, onPic
   const [selectedIds, setSelectedIds] = useState({}) // {id: artifact} for history selections
   const fileRef = useRef(null)
   const dirRef = useRef(null)
+  const swipe = useSwipeDismiss(onClose)
 
   // Load history when the Generations tab opens
   useEffect(() => {
@@ -97,10 +99,11 @@ export default function ImagePicker({ open, multi = false, title, onClose, onPic
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content image-picker" onClick={e => e.stopPropagation()}>
+      <div className="modal-content image-picker" style={swipe.style} onClick={e => e.stopPropagation()}>
+        <div className="modal-grabber" {...swipe.handlers} aria-hidden="true" />
         <div className="modal-header">
           <h2><i className="fas fa-image" /> {title || (multi ? 'Add Images' : 'Choose Image')}</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose} aria-label="Close">×</button>
         </div>
 
         <div className="image-picker-tabs">

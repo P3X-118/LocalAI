@@ -3,7 +3,6 @@ import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import OperationsBar from './components/OperationsBar'
 import { ToastContainer, useToast } from './components/Toast'
-import JobsDock from './components/JobsDock'
 import { MediaJobsProvider } from './hooks/useMediaJobs'
 import { systemApi } from './utils/api'
 
@@ -86,7 +85,6 @@ export default function App() {
           </footer>
         )}
       </main>
-      <JobsDock />
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
     </MediaJobsProvider>

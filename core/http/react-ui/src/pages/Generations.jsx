@@ -4,6 +4,7 @@ import { generationsApi } from '../utils/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ConfirmDialog from '../components/ConfirmDialog'
 import RemixDialog from '../components/RemixDialog'
+import { useSwipeDismiss } from '../hooks/useSwipeDismiss'
 
 const TABS = [
   { key: '',            label: 'All',    icon: 'fa-th' },
@@ -31,7 +32,7 @@ function formatDuration(ms) {
   return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`
 }
 
-function ArtifactPreview({ item }) {
+function ArtifactPreview({ item, detail = false }) {
   // Build a usable URL: artifact.output_url is path-form ("/generated-*/x.png");
   // strip any host prefix the backend added (we are same-origin).
   const url = (item.output_url || '').replace(/^https?:\/\/[^/]+/, '') || null
@@ -39,10 +40,12 @@ function ArtifactPreview({ item }) {
 
   switch (item.type) {
     case 'image':
-      return <img className="gen-card-image" src={url} alt={item.prompt?.slice(0, 80) || 'image'} loading="lazy" />
+      // Grid thumbnails crop to a square; the detail view contains the whole
+      // image (no over-zoom) via the gen-detail-image class.
+      return <img className={detail ? 'gen-detail-image' : 'gen-card-image'} src={url} alt={item.prompt?.slice(0, 80) || 'image'} loading="lazy" />
     case 'video':
       return (
-        <video className="gen-card-video" controls preload="metadata">
+        <video className={detail ? 'gen-detail-video' : 'gen-card-video'} controls preload="metadata">
           <source src={url} />
         </video>
       )
@@ -65,6 +68,7 @@ export default function Generations() {
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState({}) // {id: item}
   const [remixItem, setRemixItem] = useState(null)
+  const detailSwipe = useSwipeDismiss(() => setDetailItem(null))
 
   // Helper: produce a same-origin path for an artifact suitable for the
   // backend's processImageFile (which downloads http(s) URLs server-side).
@@ -254,7 +258,7 @@ export default function Generations() {
                     {item.type === 'image' && (
                       <button
                         className="gen-card-action"
-                        title="Remix — edit prompt + params and re-generate"
+                        title="Edit & re-generate — prompt, params, and models"
                         onClick={(e) => { e.stopPropagation(); setRemixItem(item) }}
                       >
                         <i className="fas fa-wand-magic-sparkles" />
@@ -286,68 +290,81 @@ export default function Generations() {
 
       {detailItem && (
         <div className="modal-backdrop" onClick={() => setDetailItem(null)}>
-          <div className="modal-content gen-detail" onClick={e => e.stopPropagation()}>
+          <div className="modal-content gen-detail" style={detailSwipe.style} onClick={e => e.stopPropagation()}>
+            <div className="modal-grabber" {...detailSwipe.handlers} aria-hidden="true" />
             <div className="modal-header">
               <h2><i className={`fas ${TABS.find(t => t.key === detailItem.type)?.icon || 'fa-file'}`} /> {detailItem.model}</h2>
-              <button className="modal-close" onClick={() => setDetailItem(null)}>×</button>
+              <button className="modal-close" onClick={() => setDetailItem(null)} aria-label="Close">×</button>
             </div>
             <div className="modal-body">
-              <ArtifactPreview item={detailItem} />
-              <div className="gen-detail-section">
-                <label>Prompt</label>
-                <pre>{detailItem.prompt || '(none)'}</pre>
-              </div>
-              {detailItem.negative_prompt && (
-                <div className="gen-detail-section">
-                  <label>Negative prompt</label>
-                  <pre>{detailItem.negative_prompt}</pre>
-                </div>
-              )}
-              {detailItem.params && Object.keys(detailItem.params).length > 0 && (
-                <div className="gen-detail-section">
-                  <label>Parameters</label>
-                  <pre>{JSON.stringify(detailItem.params, null, 2)}</pre>
-                </div>
-              )}
-              <div className="gen-detail-meta">
-                <span>{new Date(detailItem.created_at).toLocaleString()}</span>
-                <span>·</span>
-                <span>{formatDuration(detailItem.duration_ms)}</span>
-                {detailItem.job_id && (<><span>·</span><span title="Background job ID">job {detailItem.job_id.slice(0, 8)}</span></>)}
-              </div>
-              {detailItem.output_url && (
-                <div className="gen-detail-actions">
-                  {detailItem.type === 'image' && (
+              <div className="gen-detail-media">
+                <ArtifactPreview item={detailItem} detail />
+                {detailItem.output_url && (
+                  <div className="gen-detail-actions">
+                    {detailItem.type === 'image' && (
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => { setRemixItem(detailItem); setDetailItem(null) }}
+                        title="Edit the prompt + params and regenerate — optionally on other models"
+                      >
+                        <i className="fas fa-wand-magic-sparkles" /> Edit &amp; re-generate
+                      </button>
+                    )}
+                    {detailItem.type === 'image' && (
+                      <>
+                        <button
+                          className="btn"
+                          onClick={() => { navigate('/app/image', { state: { sourceImage: urlForItem(detailItem) } }); setDetailItem(null) }}
+                          title="Open Image Generation with this as the img2img source"
+                        >
+                          <i className="fas fa-arrow-right-arrow-left" /> Use as source
+                        </button>
+                        <button
+                          className="btn"
+                          onClick={() => { navigate('/app/image', { state: { refImages: [urlForItem(detailItem)] } }); setDetailItem(null) }}
+                          title="Open Image Generation with this as a reference image"
+                        >
+                          <i className="fas fa-layer-group" /> Use as reference
+                        </button>
+                      </>
+                    )}
+                    <a className="btn" href={detailItem.output_url} target="_blank" rel="noreferrer"><i className="fas fa-up-right-from-square" /> Open</a>
+                    <a className="btn" href={detailItem.output_url} download><i className="fas fa-download" /> Download</a>
                     <button
-                      className="btn btn-primary"
-                      onClick={() => { setRemixItem(detailItem); setDetailItem(null) }}
-                      title="Edit the prompt + params and regenerate"
+                      className="btn"
+                      style={{ color: '#ff7a7a', borderColor: 'rgba(255,90,90,0.4)' }}
+                      onClick={() => { setConfirmDelete(detailItem); setDetailItem(null) }}
+                      title="Delete this generation"
                     >
-                      <i className="fas fa-wand-magic-sparkles" /> Remix
+                      <i className="fas fa-trash" /> Delete
                     </button>
-                  )}
-                  {detailItem.type === 'image' && (
-                    <>
-                      <button
-                        className="btn"
-                        onClick={() => { navigate('/app/image', { state: { sourceImage: urlForItem(detailItem) } }); setDetailItem(null) }}
-                        title="Open Image Generation with this as the img2img source"
-                      >
-                        <i className="fas fa-arrow-right-arrow-left" /> Use as source
-                      </button>
-                      <button
-                        className="btn"
-                        onClick={() => { navigate('/app/image', { state: { refImages: [urlForItem(detailItem)] } }); setDetailItem(null) }}
-                        title="Open Image Generation with this as a reference image"
-                      >
-                        <i className="fas fa-layer-group" /> Use as reference
-                      </button>
-                    </>
-                  )}
-                  <a className="btn" href={detailItem.output_url} target="_blank" rel="noreferrer">Open</a>
-                  <a className="btn" href={detailItem.output_url} download>Download</a>
+                  </div>
+                )}
+              </div>
+              <div className="gen-detail-info">
+                <div className="gen-detail-section">
+                  <label>Prompt</label>
+                  <pre>{detailItem.prompt || '(none)'}</pre>
                 </div>
-              )}
+                {detailItem.negative_prompt && (
+                  <div className="gen-detail-section">
+                    <label>Negative prompt</label>
+                    <pre>{detailItem.negative_prompt}</pre>
+                  </div>
+                )}
+                {detailItem.params && Object.keys(detailItem.params).length > 0 && (
+                  <div className="gen-detail-section">
+                    <label>Parameters</label>
+                    <pre>{JSON.stringify(detailItem.params, null, 2)}</pre>
+                  </div>
+                )}
+                <div className="gen-detail-meta">
+                  <span>{new Date(detailItem.created_at).toLocaleString()}</span>
+                  <span>·</span>
+                  <span>{formatDuration(detailItem.duration_ms)}</span>
+                  {detailItem.job_id && (<><span>·</span><span title="Background job ID">job {detailItem.job_id.slice(0, 8)}</span></>)}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -367,6 +384,10 @@ export default function Generations() {
         open={!!remixItem}
         item={remixItem}
         onClose={() => setRemixItem(null)}
+        onQueued={(total, modelCount) => addToast(
+          `Queued ${total} generation${total > 1 ? 's' : ''}${modelCount > 1 ? ` across ${modelCount} models` : ''} — track them in Studio › Queue`,
+          'success'
+        )}
       />
     </div>
   )
