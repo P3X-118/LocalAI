@@ -37,6 +37,8 @@ const sections = [
     },
     items: [
       { path: '/app/agents', icon: 'fas fa-robot', label: 'Agents' },
+      { path: '/app/agent-groups/new', icon: 'fas fa-users', label: 'New Group' },
+      { path: '/app/actions-playground', icon: 'fas fa-play', label: 'Actions Playground' },
       { path: '/app/skills', icon: 'fas fa-wand-magic-sparkles', label: 'Skills' },
       { path: '/app/collections', icon: 'fas fa-database', label: 'Memory' },
       { path: '/app/agent-jobs', icon: 'fas fa-tasks', label: 'MCP CI Jobs', feature: 'mcp' },

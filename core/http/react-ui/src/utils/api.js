@@ -243,6 +243,28 @@ export const soundApi = {
   },
 }
 
+// Agent actions playground — list available actions, fetch their parameter
+// definitions, and execute them with config + params. Backed by our
+// /api/agents/actions/* routes (handlers already in agent_pool service).
+export const actionsApi = {
+  list: () => fetchJSON(API_CONFIG.endpoints.agentActions),
+  getDefinition: (name, config = {}) =>
+    postJSON(API_CONFIG.endpoints.agentActionDefinition(name), { config }),
+  execute: (name, body) =>
+    postJSON(API_CONFIG.endpoints.agentActionRun(name), body),
+  getConfigMetadata: () => fetchJSON(API_CONFIG.endpoints.agentConfigMetadata),
+}
+
+// Agent groups — LLM-guided multi-agent team creation. POST a free-form
+// team description, get back N agent profiles. Then bulk-create them all
+// under a shared agent_config. Backed by our /api/agents/group/*.
+export const agentGroupsApi = {
+  generateProfiles: (description) =>
+    postJSON(API_CONFIG.endpoints.agentGroupGenerateProfiles, { description }),
+  create: (body) =>
+    postJSON(API_CONFIG.endpoints.agentGroupCreate, body),
+}
+
 // Generated-media history (browse past image/video/audio outputs and their
 // prompts, params, timestamps — backed by sidecar JSON next to each artifact).
 export const generationsApi = {

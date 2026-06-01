@@ -51,6 +51,12 @@ func RegisterAgentPoolRoutes(e *echo.Echo, app *application.Application,
 	ag.POST("/actions/:name/definition", localai.GetActionDefinitionEndpoint(app))
 	ag.POST("/actions/:name/run", localai.ExecuteActionEndpoint(app))
 
+	// Group creation wizard — ports upstream LocalAGI webui/app.go:700-770
+	// from Fiber to Echo. LLM-guided JSON to invent N agent profiles, then
+	// bulk-create them under the caller's user ID.
+	ag.POST("/group/generateProfiles", localai.GenerateGroupProfilesEndpoint(app))
+	ag.POST("/group/create", localai.CreateGroupEndpoint(app))
+
 	// Skills routes — require "skills" feature
 	sg := e.Group("/api/agents/skills", poolReadyMw, skillsMw)
 	sg.GET("", localai.ListSkillsEndpoint(app))
