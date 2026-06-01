@@ -173,6 +173,8 @@ type OpenAIRequest struct {
 	// Image (not supported by OpenAI)
 	Quality string `json:"quality"`
 	Step    int    `json:"step"`
+	// img2img denoising strength (0..1); only used when an init image (File) is set.
+	Strength float32 `json:"strength,omitempty"`
 
 	// A grammar to constrain the LLM output
 	Grammar string `json:"grammar" yaml:"grammar"`

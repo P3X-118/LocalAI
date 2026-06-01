@@ -62,6 +62,7 @@ type ModelConfig struct {
 	// Diffusers
 	Diffusers Diffusers `yaml:"diffusers,omitempty" json:"diffusers,omitempty"`
 	Step      int       `yaml:"step,omitempty" json:"step,omitempty"`
+	Strength  float32   `yaml:"strength,omitempty" json:"strength,omitempty"` // img2img denoising strength default (0..1)
 
 	// GRPC Options
 	GRPC GRPC `yaml:"grpc,omitempty" json:"grpc,omitempty"`

@@ -10,7 +10,7 @@ import (
 	model "github.com/P3X-118/LocalAI/pkg/model"
 )
 
-func ImageGeneration(height, width, step, seed int, positive_prompt, negative_prompt, src, dst string, loader *model.ModelLoader, modelConfig config.ModelConfig, appConfig *config.ApplicationConfig, refImages []string) (func() error, error) {
+func ImageGeneration(height, width, step, seed int, strength float32, positive_prompt, negative_prompt, src, dst string, loader *model.ModelLoader, modelConfig config.ModelConfig, appConfig *config.ApplicationConfig, refImages []string) (func() error, error) {
 
 	opts := ModelOptions(modelConfig, appConfig)
 	inferenceModel, err := loader.Load(
@@ -36,6 +36,7 @@ func ImageGeneration(height, width, step, seed int, positive_prompt, negative_pr
 				Src:              src,
 				EnableParameters: modelConfig.Diffusers.EnableParameters,
 				RefImages:        refImages,
+				Strength:         strength,
 			})
 		return err
 	}
@@ -50,6 +51,7 @@ func ImageGeneration(height, width, step, seed int, positive_prompt, negative_pr
 			"width":           width,
 			"step":            step,
 			"seed":            seed,
+			"strength":        strength,
 			"source_image":    src,
 			"destination":     dst,
 		}

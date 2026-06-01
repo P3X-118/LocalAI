@@ -173,6 +173,13 @@ func ImageEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfi
 					step = input.Step
 				}
 
+				// img2img denoising strength: request overrides the per-model
+				// default; 0 means "unset" and the backend applies its default.
+				strength := config.Strength
+				if input.Strength != 0 {
+					strength = input.Strength
+				}
+
 				tempDir := ""
 				if !b64JSON {
 					tempDir = filepath.Join(appConfig.GeneratedContentDir, "images")
@@ -199,7 +206,7 @@ func ImageEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfi
 					inputSrc = inputImages[0]
 				}
 
-				fn, err := backend.ImageGeneration(height, width, step, *config.Seed, positive_prompt, negative_prompt, inputSrc, output, ml, *config, appConfig, refImages)
+				fn, err := backend.ImageGeneration(height, width, step, *config.Seed, strength, positive_prompt, negative_prompt, inputSrc, output, ml, *config, appConfig, refImages)
 				if err != nil {
 					return err
 				}
