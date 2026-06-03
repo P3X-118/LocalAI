@@ -410,8 +410,11 @@ static void params_parse(server_context& /*ctx_server*/, const backend::ModelOpt
     params.cont_batching = true;
     // check_tensors: validate tensor data (default: false)
     params.check_tensors = false;
-    // warmup: enable warmup run (default: true)
-    params.warmup = true;
+    // warmup: enable warmup run (default: true upstream; FORCED to false here
+    // because on Jetson Orin (sm_87) with CUDA 12.6 the warmup forward-pass
+    // segfaults inside ggml-cuda. Can still be re-enabled per-model via the
+    // "warmup:true" option. See project_localai_jetson_gpu_detect.md
+    params.warmup = false;
     // no_op_offload: disable host tensor op offload (default: false)
     params.no_op_offload = false;
     // kv_unified: enable unified KV cache (default: false)
