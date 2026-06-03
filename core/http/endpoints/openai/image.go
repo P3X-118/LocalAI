@@ -248,13 +248,40 @@ func ImageEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfi
 						Model:          input.Model,
 						Prompt:         positive_prompt,
 						NegativePrompt: negative_prompt,
-						Params: map[string]any{
-							"width":  width,
-							"height": height,
-							"step":   step,
-							"seed":   seed,
-							"n":      input.N,
-						},
+						Params: func() map[string]any {
+							p := map[string]any{
+								"width":  width,
+								"height": height,
+								"step":   step,
+								"seed":   seed,
+								"n":      input.N,
+							}
+							if input.CFGScale > 0 {
+								p["cfg_scale"] = input.CFGScale
+							}
+							if input.Sampler != "" {
+								p["sampler"] = input.Sampler
+							}
+							if input.Scheduler != "" {
+								p["scheduler"] = input.Scheduler
+							}
+							if input.ClipSkipParam != 0 {
+								p["clip_skip"] = input.ClipSkipParam
+							}
+							if input.HiresFix {
+								p["hires_fix"] = true
+								if input.HiresUpscale > 0 {
+									p["hires_upscale"] = input.HiresUpscale
+								}
+								if input.HiresSteps > 0 {
+									p["hires_steps"] = input.HiresSteps
+								}
+							}
+							if strength > 0 {
+								p["strength"] = strength
+							}
+							return p
+						}(),
 						CreatedAt:  time.Now().UTC(),
 						DurationMs: time.Since(handlerStartedAt).Milliseconds(),
 						OutputPath: output,
