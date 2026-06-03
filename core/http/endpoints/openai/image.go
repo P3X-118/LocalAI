@@ -206,7 +206,12 @@ func ImageEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfi
 					inputSrc = inputImages[0]
 				}
 
-				fn, err := backend.ImageGeneration(height, width, step, *config.Seed, strength, positive_prompt, negative_prompt, inputSrc, output, ml, *config, appConfig, refImages)
+				// Per-request SD overrides. Empty / zero means "use the model yaml default".
+				cfgScale := input.CFGScale
+				if cfgScale == 0 {
+					cfgScale = config.CFGScale
+				}
+				fn, err := backend.ImageGeneration(height, width, step, *config.Seed, strength, positive_prompt, negative_prompt, inputSrc, output, ml, *config, appConfig, refImages, cfgScale, input.Sampler, input.Scheduler, input.ClipSkipParam, input.HiresFix, input.HiresUpscale, input.HiresSteps)
 				if err != nil {
 					return err
 				}

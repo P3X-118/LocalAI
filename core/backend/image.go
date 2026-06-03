@@ -10,7 +10,7 @@ import (
 	model "github.com/P3X-118/LocalAI/pkg/model"
 )
 
-func ImageGeneration(height, width, step, seed int, strength float32, positive_prompt, negative_prompt, src, dst string, loader *model.ModelLoader, modelConfig config.ModelConfig, appConfig *config.ApplicationConfig, refImages []string) (func() error, error) {
+func ImageGeneration(height, width, step, seed int, strength float32, positive_prompt, negative_prompt, src, dst string, loader *model.ModelLoader, modelConfig config.ModelConfig, appConfig *config.ApplicationConfig, refImages []string, cfgScale float32, sampler, scheduler string, clipSkipOverride int, hiresFix bool, hiresUpscale float32, hiresSteps int) (func() error, error) {
 
 	opts := ModelOptions(modelConfig, appConfig)
 	inferenceModel, err := loader.Load(
@@ -22,6 +22,11 @@ func ImageGeneration(height, width, step, seed int, strength float32, positive_p
 	}
 
 	fn := func() error {
+		// Pick the per-request override over the model's CLIP skip default.
+		clipSkip := int32(modelConfig.Diffusers.ClipSkip)
+		if clipSkipOverride != 0 {
+			clipSkip = int32(clipSkipOverride)
+		}
 		_, err := inferenceModel.GenerateImage(
 			appConfig.Context,
 			&proto.GenerateImageRequest{
@@ -29,7 +34,7 @@ func ImageGeneration(height, width, step, seed int, strength float32, positive_p
 				Width:            int32(width),
 				Step:             int32(step),
 				Seed:             int32(seed),
-				CLIPSkip:         int32(modelConfig.Diffusers.ClipSkip),
+				CLIPSkip:         clipSkip,
 				PositivePrompt:   positive_prompt,
 				NegativePrompt:   negative_prompt,
 				Dst:              dst,
@@ -37,6 +42,13 @@ func ImageGeneration(height, width, step, seed int, strength float32, positive_p
 				EnableParameters: modelConfig.Diffusers.EnableParameters,
 				RefImages:        refImages,
 				Strength:         strength,
+				CfgScale:         cfgScale,
+				Sampler:          sampler,
+				Scheduler:        scheduler,
+				ClipSkipOverride: int32(clipSkipOverride),
+				HiresFix:         hiresFix,
+				HiresUpscale:     hiresUpscale,
+				HiresSteps:       int32(hiresSteps),
 			})
 		return err
 	}

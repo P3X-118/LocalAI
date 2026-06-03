@@ -358,6 +358,17 @@ message GenerateImageRequest {
   // lower keeps more of the source, higher diverges toward the prompt. Only
   // meaningful when src is set. 0 = backend default (0.75).
   float strength = 13;
+
+  // Per-request overrides for sampler config. When unset (0/empty), the
+  // backend falls back to whatever LoadModel stashed from the model yaml.
+  float cfg_scale = 14;       // 0 = use model default
+  string sampler = 15;        // ComfyUI sampler name (euler, dpmpp_2m, ...) — empty = model default
+  string scheduler = 16;      // normal, karras, exponential, simple, sgm_uniform, ddim_uniform, beta
+  int32 clip_skip_override = 17;   // -1 or 0 = use model default
+  // Hi-res fix (latent upscale + second sampling pass)
+  bool hires_fix = 18;
+  float hires_upscale = 19;   // multiplier, e.g. 1.5, 2.0; 0 = use 1.5
+  int32 hires_steps = 20;     // 0 = use main steps
 }
 
 message GenerateVideoRequest {

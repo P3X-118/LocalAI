@@ -232,7 +232,7 @@ func InpaintingEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, app
 		// Also pass ref images (orig + mask) so backends that support ref images can use them.
 		refImages := []string{origRef, maskRef}
 		// strength 0 → backend default (0.75), matching prior inpainting behavior.
-		fn, err := backend.ImageGenerationFunc(height, width, steps, 0, 0, prompt, "", jsonPath, dst, ml, *cfg, appConfig, refImages)
+		fn, err := backend.ImageGenerationFunc(height, width, steps, 0, 0, prompt, "", jsonPath, dst, ml, *cfg, appConfig, refImages, 0, "", "", 0, false, 0, 0)
 		if err != nil {
 			return err
 		}

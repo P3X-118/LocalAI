@@ -12,6 +12,8 @@ import { usePersistedState } from '../hooks/usePersistedState'
 
 const SIZES = ['256x256', '512x512', '768x768', '1024x1024']
 const COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+const SAMPLERS = ['euler', 'euler_ancestral', 'dpmpp_2m', 'dpmpp_sde', 'dpmpp_2m_sde', 'heun', 'lms', 'ddim', 'lcm', 'uni_pc']
+const SCHEDULERS = ['normal', 'karras', 'exponential', 'simple', 'sgm_uniform', 'ddim_uniform', 'beta']
 
 export default function ImageGen() {
   const { model: urlModel } = useParams()
@@ -25,6 +27,13 @@ export default function ImageGen() {
   const [count, setCount] = usePersistedState('localai.studio.image.count', 1)
   const [steps, setSteps] = usePersistedState('localai.studio.image.steps', '')
   const [seed, setSeed] = usePersistedState('localai.studio.image.seed', '')
+  const [cfgScale, setCfgScale] = usePersistedState('localai.studio.image.cfg', '')
+  const [sampler, setSampler] = usePersistedState('localai.studio.image.sampler', '')
+  const [scheduler, setScheduler] = usePersistedState('localai.studio.image.scheduler', '')
+  const [clipSkip, setClipSkip] = usePersistedState('localai.studio.image.clipskip', '')
+  const [hiresFix, setHiresFix] = usePersistedState('localai.studio.image.hiresfix', false)
+  const [hiresUpscale, setHiresUpscale] = usePersistedState('localai.studio.image.hiresupscale', '1.5')
+  const [hiresSteps, setHiresSteps] = usePersistedState('localai.studio.image.hiressteps', '')
   const [error, setError] = useState(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showImageInputs, setShowImageInputs] = useState(false)
@@ -91,6 +100,15 @@ export default function ImageGen() {
     const base = { prompt: combinedPrompt, n: 1, size }
     if (steps) base.step = parseInt(steps)
     if (seed) base.seed = parseInt(seed)
+    if (cfgScale) base.cfg_scale = parseFloat(cfgScale)
+    if (sampler) base.sampler = sampler
+    if (scheduler) base.scheduler = scheduler
+    if (clipSkip) base.clip_skip = parseInt(clipSkip)
+    if (hiresFix) {
+      base.hires_fix = true
+      if (hiresUpscale) base.hires_upscale = parseFloat(hiresUpscale)
+      if (hiresSteps) base.hires_steps = parseInt(hiresSteps)
+    }
     if (sourceImage) base.file = sourceImage
     if (refImages.length > 0) base.ref_images = refImages
 
@@ -171,9 +189,55 @@ export default function ImageGen() {
             <i className="fas fa-chevron-right" /> Advanced Settings
           </div>
           {showAdvanced && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)' }}>
-              <div className="form-group"><label className="form-label">Steps</label><input className="input" type="number" value={steps} onFocus={(e) => e.target.select()} onChange={(e) => setSteps(e.target.value)} placeholder="20" /></div>
-              <div className="form-group"><label className="form-label">Seed</label><input className="input" type="number" value={seed} onFocus={(e) => e.target.select()} onChange={(e) => setSeed(e.target.value)} placeholder="Random" /></div>
+            <div style={{ marginBottom: 'var(--spacing-md)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+                <div className="form-group"><label className="form-label">Steps</label><input className="input" type="number" value={steps} onFocus={(e) => e.target.select()} onChange={(e) => setSteps(e.target.value)} placeholder="20" /></div>
+                <div className="form-group"><label className="form-label">Seed</label><input className="input" type="number" value={seed} onFocus={(e) => e.target.select()} onChange={(e) => setSeed(e.target.value)} placeholder="Random" /></div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+                <div className="form-group">
+                  <label className="form-label">CFG Scale <span style={{ color: 'var(--color-text-muted)', fontWeight: 400, fontSize: '0.7rem' }}>1–20</span></label>
+                  <input className="input" type="number" step="0.5" min="1" max="20" value={cfgScale} onFocus={(e) => e.target.select()} onChange={(e) => setCfgScale(e.target.value)} placeholder="7" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">CLIP Skip</label>
+                  <input className="input" type="number" min="0" max="12" value={clipSkip} onFocus={(e) => e.target.select()} onChange={(e) => setClipSkip(e.target.value)} placeholder="0" />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+                <div className="form-group">
+                  <label className="form-label">Sampler</label>
+                  <select className="model-selector" value={sampler} onChange={(e) => setSampler(e.target.value)} style={{ width: '100%' }}>
+                    <option value="">model default</option>
+                    {SAMPLERS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Scheduler</label>
+                  <select className="model-selector" value={scheduler} onChange={(e) => setScheduler(e.target.value)} style={{ width: '100%' }}>
+                    <option value="">model default</option>
+                    {SCHEDULERS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="form-group" style={{ marginTop: 'var(--spacing-sm)' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={hiresFix} onChange={(e) => setHiresFix(e.target.checked)} />
+                  Hires fix <span style={{ color: 'var(--color-text-muted)', fontWeight: 400, fontSize: '0.7rem' }}>— upscale + second pass</span>
+                </label>
+              </div>
+              {hiresFix && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+                  <div className="form-group">
+                    <label className="form-label">Upscale</label>
+                    <input className="input" type="number" step="0.1" min="1.0" max="4.0" value={hiresUpscale} onFocus={(e) => e.target.select()} onChange={(e) => setHiresUpscale(e.target.value)} placeholder="1.5" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Hires steps</label>
+                    <input className="input" type="number" min="0" value={hiresSteps} onFocus={(e) => e.target.select()} onChange={(e) => setHiresSteps(e.target.value)} placeholder="same" />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

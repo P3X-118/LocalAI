@@ -176,6 +176,15 @@ type OpenAIRequest struct {
 	// img2img denoising strength (0..1); only used when an init image (File) is set.
 	Strength float32 `json:"strength,omitempty"`
 
+	// Stable Diffusion per-request overrides. Empty/zero = use model yaml default.
+	CFGScale       float32 `json:"cfg_scale,omitempty"`
+	Sampler        string  `json:"sampler,omitempty"`           // ComfyUI sampler_name
+	Scheduler      string  `json:"scheduler,omitempty"`         // ComfyUI scheduler
+	ClipSkipParam  int     `json:"clip_skip,omitempty"`         // overrides model's clip_skip
+	HiresFix       bool    `json:"hires_fix,omitempty"`
+	HiresUpscale   float32 `json:"hires_upscale,omitempty"`
+	HiresSteps     int     `json:"hires_steps,omitempty"`
+
 	// A grammar to constrain the LLM output
 	Grammar string `json:"grammar" yaml:"grammar"`
 
