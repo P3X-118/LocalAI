@@ -3,6 +3,7 @@ package xsysinfo
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -28,7 +29,12 @@ const (
 var UnifiedMemoryDevices = []string{
 	"NVIDIA GB10",
 	"GB10",
-	// Add more unified memory devices here as needed
+	// Jetson iGPUs: share system RAM with CPU. nvidia-smi returns [N/A] for
+	// memory queries (NVML doesn't support Tegra memory introspection), so we
+	// must fall back to system RAM. Devices on JP6 report as "Orin (nvgpu)".
+	"ORIN",
+	"NVGPU",
+	"TEGRA",
 }
 
 // GPUMemoryInfo contains real-time GPU memory usage information
@@ -275,8 +281,38 @@ func GetGPUAggregateInfo() GPUAggregateInfo {
 	return aggregate
 }
 
+// IsJetson reports true if running on an NVIDIA Jetson (Tegra) host. nvidia-smi
+// NVML memory queries are unsupported on Jetson iGPUs and return "[N/A]" --
+// calling them may also disturb the iGPU runtime state in ways that break
+// CUDA init for spawned subprocesses (observed on JP 6.2.1, driver 540.4.0).
+func IsJetson() bool {
+	if _, err := os.Stat("/etc/nv_tegra_release"); err == nil {
+		return true
+	}
+	return false
+}
+
 // getNVIDIAGPUMemory queries NVIDIA GPUs using nvidia-smi
 func getNVIDIAGPUMemory() []GPUMemoryInfo {
+	// On Jetson, skip nvidia-smi entirely. NVML memory queries return [N/A]
+	// and (anecdotally) may put the iGPU into a state that breaks subsequent
+	// CUDA inits in spawned gRPC backends. Treat the iGPU as unified memory
+	// and let the caller fall back to system RAM via UnifiedMemoryDevices.
+	if IsJetson() {
+		sysInfo, err := GetSystemRAMInfo()
+		if err != nil {
+			return nil
+		}
+		return []GPUMemoryInfo{{
+			Index:        0,
+			Name:         "Orin (nvgpu)",
+			Vendor:       VendorNVIDIA,
+			TotalVRAM:    sysInfo.Total,
+			UsedVRAM:     sysInfo.Used,
+			FreeVRAM:     sysInfo.Free,
+			UsagePercent: 0,
+		}}
+	}
 	// Check if nvidia-smi is available
 	if _, err := exec.LookPath("nvidia-smi"); err != nil {
 		return nil
