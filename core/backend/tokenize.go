@@ -3,11 +3,11 @@ package backend
 import (
 	"time"
 
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/trace"
-	"github.com/mudler/LocalAI/core/schema"
-	"github.com/mudler/LocalAI/pkg/grpc"
-	"github.com/mudler/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/trace"
+	"github.com/P3X-118/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/pkg/grpc"
+	"github.com/P3X-118/LocalAI/pkg/model"
 )
 
 func ModelTokenize(s string, loader *model.ModelLoader, modelConfig config.ModelConfig, appConfig *config.ApplicationConfig) (schema.TokenizeResponse, error) {

@@ -12,6 +12,7 @@ import MCPAppFrame from '../components/MCPAppFrame'
 import UnifiedMCPDropdown from '../components/UnifiedMCPDropdown'
 import { loadClientMCPServers } from '../utils/mcpClientStorage'
 import ConfirmDialog from '../components/ConfirmDialog'
+import GpuGauge from '../components/GpuGauge'
 import { useAuth } from '../context/AuthContext'
 
 function relativeTime(ts) {
@@ -1210,22 +1211,21 @@ export default function Chat() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Token info bar */}
-        {(tokensPerSecond || maxTokensPerSecond || activeChat.tokenUsage?.total > 0) && (
-          <div className="chat-token-info">
-            {tokensPerSecond !== null && <span><i className="fas fa-tachometer-alt" /> {tokensPerSecond} tok/s</span>}
-            {maxTokensPerSecond !== null && !isStreaming && (
-              <span className="chat-max-tps-badge">
-                <i className="fas fa-bolt" /> Peak: {maxTokensPerSecond} tok/s
-              </span>
-            )}
-            {activeChat.tokenUsage?.total > 0 && (
-              <span>
-                <i className="fas fa-coins" /> {activeChat.tokenUsage.prompt}p + {activeChat.tokenUsage.completion}c = {activeChat.tokenUsage.total}
-              </span>
-            )}
-          </div>
-        )}
+        {/* Token info + live GPU gauge bar (always visible while a chat is open) */}
+        <div className="chat-token-info">
+          {tokensPerSecond !== null && <span><i className="fas fa-tachometer-alt" /> {tokensPerSecond} tok/s</span>}
+          {maxTokensPerSecond !== null && !isStreaming && (
+            <span className="chat-max-tps-badge">
+              <i className="fas fa-bolt" /> Peak: {maxTokensPerSecond} tok/s
+            </span>
+          )}
+          {activeChat.tokenUsage?.total > 0 && (
+            <span>
+              <i className="fas fa-coins" /> {activeChat.tokenUsage.prompt}p + {activeChat.tokenUsage.completion}c = {activeChat.tokenUsage.total}
+            </span>
+          )}
+          <GpuGauge />
+        </div>
 
         {/* File badges */}
         {files.length > 0 && (

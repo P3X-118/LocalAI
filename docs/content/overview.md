@@ -27,13 +27,13 @@ In today's AI landscape, privacy, control, and flexibility are paramount. LocalA
 
 LocalAI is more than just a single tool - it's a complete ecosystem:
 
-1. **[LocalAI Core](https://github.com/mudler/LocalAI)**
+1. **[LocalAI Core](https://github.com/P3X-118/LocalAI)**
    - OpenAI-compatible API
    - Multiple model support (LLMs, image, audio)
    - Model Context Protocol (MCP) for agentic capabilities
    - No GPU required
    - Fast inference with native bindings
-   - [Github repository](https://github.com/mudler/LocalAI)
+   - [Github repository](https://github.com/P3X-118/LocalAI)
 
 2. **[LocalAGI](https://github.com/mudler/LocalAGI)**
    - Autonomous AI agents
@@ -79,7 +79,7 @@ For complete installation instructions including Docker, macOS, Linux, Kubernete
 LocalAI is a community-driven project. You can:
 
 - Join our [Discord community](https://discord.gg/uJAeKSAGDy)
-- Check out our [GitHub repository](https://github.com/mudler/LocalAI)
+- Check out our [GitHub repository](https://github.com/P3X-118/LocalAI)
 - Contribute to the project
 - Share your use cases and examples
 
@@ -92,7 +92,7 @@ Ready to dive in? Here are some recommended next steps:
 3. [Model compatibility](/model-compatibility/)
 4. [Try out examples](https://github.com/mudler/LocalAI-examples)
 5. [Join the community](https://discord.gg/uJAeKSAGDy)
-6. [Check the LocalAI Github repository](https://github.com/mudler/LocalAI)
+6. [Check the LocalAI Github repository](https://github.com/P3X-118/LocalAI)
 7. [Check the LocalAGI Github repository](https://github.com/mudler/LocalAGI)
 
 

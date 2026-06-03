@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/trace"
-	"github.com/mudler/LocalAI/pkg/grpc/proto"
-	model "github.com/mudler/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/trace"
+	"github.com/P3X-118/LocalAI/pkg/grpc/proto"
+	model "github.com/P3X-118/LocalAI/pkg/model"
 )
 
 func Rerank(request *proto.RerankRequest, loader *model.ModelLoader, appConfig *config.ApplicationConfig, modelConfig config.ModelConfig) (*proto.RerankResult, error) {

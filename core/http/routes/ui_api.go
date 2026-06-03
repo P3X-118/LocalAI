@@ -17,17 +17,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/application"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/gallery"
-	"github.com/mudler/LocalAI/core/http/auth"
-	"github.com/mudler/LocalAI/core/http/endpoints/localai"
-	"github.com/mudler/LocalAI/core/http/middleware"
-	"github.com/mudler/LocalAI/core/p2p"
-	"github.com/mudler/LocalAI/core/services"
-	"github.com/mudler/LocalAI/pkg/model"
-	"github.com/mudler/LocalAI/pkg/vram"
-	"github.com/mudler/LocalAI/pkg/xsysinfo"
+	"github.com/P3X-118/LocalAI/core/application"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/gallery"
+	"github.com/P3X-118/LocalAI/core/http/auth"
+	"github.com/P3X-118/LocalAI/core/http/endpoints/localai"
+	"github.com/P3X-118/LocalAI/core/http/middleware"
+	"github.com/P3X-118/LocalAI/core/p2p"
+	"github.com/P3X-118/LocalAI/core/services"
+	"github.com/P3X-118/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/pkg/vram"
+	"github.com/P3X-118/LocalAI/pkg/xsysinfo"
 	"github.com/mudler/xlog"
 )
 
@@ -480,7 +480,7 @@ func RegisterUIAPIRoutes(app *echo.Echo, cl *config.ModelConfigLoader, ml *model
 			"models":           modelsJSON,
 			"repositories":     appConfig.Galleries,
 			"allTags":          tags,
-			"allBackends":     backendNames,
+			"allBackends":      backendNames,
 			"processingModels": processingModelsData,
 			"taskTypes":        taskTypes,
 			"availableModels":  totalModels,
@@ -1280,6 +1280,21 @@ func RegisterUIAPIRoutes(app *echo.Echo, cl *config.ModelConfigLoader, ml *model
 
 		return c.JSON(200, response)
 	}, adminMiddleware)
+
+	// Lightweight live GPU/memory stats for the in-chat gauge.
+	// Unlike /api/resources this is available to any authenticated user (no
+	// admin gate) and skips the models-directory walk, so it is cheap enough
+	// to poll every couple of seconds while chatting.
+	app.GET("/api/gpu", func(c echo.Context) error {
+		info := xsysinfo.GetResourceInfo()
+		return c.JSON(200, map[string]any{
+			"type":      info.Type,
+			"available": info.Available,
+			"gpus":      info.GPUs,
+			"ram":       info.RAM,
+			"aggregate": info.Aggregate,
+		})
+	})
 
 	if !appConfig.DisableRuntimeSettings {
 		// Settings API

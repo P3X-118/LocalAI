@@ -3,7 +3,7 @@ package reasoning_test
 import (
 	"strings"
 
-	. "github.com/mudler/LocalAI/pkg/reasoning"
+	. "github.com/P3X-118/LocalAI/pkg/reasoning"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

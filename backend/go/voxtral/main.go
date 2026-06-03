@@ -7,7 +7,7 @@ import (
 	"runtime"
 
 	"github.com/ebitengine/purego"
-	grpc "github.com/mudler/LocalAI/pkg/grpc"
+	grpc "github.com/P3X-118/LocalAI/pkg/grpc"
 )
 
 var (

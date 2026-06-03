@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	hfapi "github.com/mudler/LocalAI/pkg/huggingface-api"
+	hfapi "github.com/P3X-118/LocalAI/pkg/huggingface-api"
 	openai "github.com/sashabaranov/go-openai"
 	jsonschema "github.com/sashabaranov/go-openai/jsonschema"
 )

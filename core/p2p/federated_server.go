@@ -7,7 +7,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/mudler/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/schema"
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/xlog"
 )

@@ -353,6 +353,11 @@ message GenerateImageRequest {
 
   // Reference images for models that support them (e.g., Flux Kontext)
   repeated string ref_images = 12;
+
+  // img2img denoising strength (0..1). How much the source image is changed:
+  // lower keeps more of the source, higher diverges toward the prompt. Only
+  // meaningful when src is set. 0 = backend default (0.75).
+  float strength = 13;
 }
 
 message GenerateVideoRequest {

@@ -5,11 +5,11 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/mudler/LocalAI/core/config"
-	mcpTools "github.com/mudler/LocalAI/core/http/endpoints/mcp"
-	"github.com/mudler/LocalAI/core/services"
-	"github.com/mudler/LocalAI/core/templates"
-	"github.com/mudler/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/core/config"
+	mcpTools "github.com/P3X-118/LocalAI/core/http/endpoints/mcp"
+	"github.com/P3X-118/LocalAI/core/services"
+	"github.com/P3X-118/LocalAI/core/templates"
+	"github.com/P3X-118/LocalAI/pkg/model"
 	"github.com/mudler/xlog"
 	"gorm.io/gorm"
 )
@@ -23,6 +23,8 @@ type Application struct {
 	galleryService     *services.GalleryService
 	agentJobService    *services.AgentJobService
 	agentPoolService   atomic.Pointer[services.AgentPoolService]
+	mediaHistory       *services.MediaHistory
+	mediaJobService    *services.MediaJobService
 	authDB             *gorm.DB
 	watchdogMutex      sync.Mutex
 	watchdogStop       chan bool
@@ -76,6 +78,18 @@ func (a *Application) AgentPoolService() *services.AgentPoolService {
 	return a.agentPoolService.Load()
 }
 
+// MediaHistory returns the sidecar metadata service for generated artifacts
+// (image / video / audio). Always non-nil — initialized in start().
+func (a *Application) MediaHistory() *services.MediaHistory {
+	return a.mediaHistory
+}
+
+// MediaJobService returns the background-job queue for media generation.
+// Always non-nil — initialized in start().
+func (a *Application) MediaJobService() *services.MediaJobService {
+	return a.mediaJobService
+}
+
 // AuthDB returns the auth database connection, or nil if auth is not enabled.
 func (a *Application) AuthDB() *gorm.DB {
 	return a.authDB
@@ -109,6 +123,15 @@ func (a *Application) start() error {
 	}
 
 	a.agentJobService = agentJobService
+
+	// Media history (sidecar metadata for generated images/videos/audio) and
+	// the background-job queue for async media generation. Both are cheap to
+	// construct; the job service spawns its workers on Start().
+	a.mediaHistory = services.NewMediaHistory(a.ApplicationConfig())
+	a.mediaJobService = services.NewMediaJobService(a.ApplicationConfig(), a.mediaHistory)
+	if err := a.mediaJobService.Start(a.ApplicationConfig().Context); err != nil {
+		return err
+	}
 
 	return nil
 }

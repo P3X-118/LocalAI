@@ -7,11 +7,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/application"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/http/endpoints/anthropic"
-	"github.com/mudler/LocalAI/core/http/middleware"
-	"github.com/mudler/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/application"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/http/endpoints/anthropic"
+	"github.com/P3X-118/LocalAI/core/http/middleware"
+	"github.com/P3X-118/LocalAI/core/schema"
 	"github.com/mudler/xlog"
 )
 

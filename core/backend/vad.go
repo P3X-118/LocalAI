@@ -3,10 +3,10 @@ package backend
 import (
 	"context"
 
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/schema"
-	"github.com/mudler/LocalAI/pkg/grpc/proto"
-	"github.com/mudler/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/pkg/grpc/proto"
+	"github.com/P3X-118/LocalAI/pkg/model"
 )
 
 func VAD(request *schema.VADRequest,

@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/application"
-	"github.com/mudler/LocalAI/core/schema"
-	"github.com/mudler/LocalAI/core/services"
+	"github.com/P3X-118/LocalAI/core/application"
+	"github.com/P3X-118/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/services"
 )
 
 // getJobService returns the job service for the current user.

@@ -13,12 +13,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/gallery/importers"
-	"github.com/mudler/LocalAI/core/schema"
-	pb "github.com/mudler/LocalAI/pkg/grpc/proto"
-	"github.com/mudler/LocalAI/pkg/model"
-	"github.com/mudler/LocalAI/pkg/utils"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/gallery/importers"
+	"github.com/P3X-118/LocalAI/core/schema"
+	pb "github.com/P3X-118/LocalAI/pkg/grpc/proto"
+	"github.com/P3X-118/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/pkg/utils"
 	"github.com/mudler/xlog"
 	"gopkg.in/yaml.v3"
 )

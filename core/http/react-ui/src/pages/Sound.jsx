@@ -1,31 +1,56 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams, useOutletContext } from 'react-router-dom'
 import ModelSelector from '../components/ModelSelector'
 import { CAP_SOUND_GENERATION } from '../utils/capabilities'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
-import { soundApi } from '../utils/api'
+import GpuGauge from '../components/GpuGauge'
+import { generationsApi } from '../utils/api'
+import { useMediaJobs } from '../hooks/useMediaJobs'
+import { usePersistedState } from '../hooks/usePersistedState'
 
 export default function Sound() {
   const { model: urlModel } = useParams()
   const { addToast } = useOutletContext()
-  const [model, setModel] = useState(urlModel || '')
-  const [mode, setMode] = useState('simple')
-  const [text, setText] = useState('')
-  const [instrumental, setInstrumental] = useState(false)
-  const [vocalLanguage, setVocalLanguage] = useState('')
-  const [caption, setCaption] = useState('')
-  const [lyrics, setLyrics] = useState('')
-  const [think, setThink] = useState(false)
-  const [bpm, setBpm] = useState('')
-  const [duration, setDuration] = useState('')
-  const [keyscale, setKeyscale] = useState('')
-  const [language, setLanguage] = useState('')
-  const [timesignature, setTimesignature] = useState('')
-  const [loading, setLoading] = useState(false)
+  const { jobs, submit } = useMediaJobs()
+  const [model, setModel] = usePersistedState('localai.studio.sound.model', urlModel || '')
+  const [mode, setMode] = usePersistedState('localai.studio.sound.mode', 'simple')
+  const [text, setText] = usePersistedState('localai.studio.sound.text', '')
+  const [instrumental, setInstrumental] = usePersistedState('localai.studio.sound.instrumental', false)
+  const [vocalLanguage, setVocalLanguage] = usePersistedState('localai.studio.sound.vocalLang', '')
+  const [caption, setCaption] = usePersistedState('localai.studio.sound.caption', '')
+  const [lyrics, setLyrics] = usePersistedState('localai.studio.sound.lyrics', '')
+  const [think, setThink] = usePersistedState('localai.studio.sound.think', false)
+  const [bpm, setBpm] = usePersistedState('localai.studio.sound.bpm', '')
+  const [duration, setDuration] = usePersistedState('localai.studio.sound.duration', '')
+  const [keyscale, setKeyscale] = usePersistedState('localai.studio.sound.keyscale', '')
+  const [language, setLanguage] = usePersistedState('localai.studio.sound.language', '')
+  const [timesignature, setTimesignature] = usePersistedState('localai.studio.sound.timesig', '')
   const [error, setError] = useState(null)
   const [audioUrl, setAudioUrl] = useState(null)
+  const [activeJobId, setActiveJobId] = useState(null)
   const audioRef = useRef(null)
+
+  const activeJob = activeJobId ? jobs.find(j => j.id === activeJobId) : null
+  const loading = activeJob && (activeJob.status === 'queued' || activeJob.status === 'running')
+
+  useEffect(() => {
+    if (!activeJob || activeJob.status !== 'completed' || !activeJob.artifact_id) return
+    let cancelled = false
+    generationsApi.get(activeJob.artifact_id).then(a => {
+      if (cancelled) return
+      if (a?.output_url) {
+        const u = a.output_url.replace(/^https?:\/\/[^/]+/, '')
+        setAudioUrl(u)
+        setTimeout(() => audioRef.current?.play().catch(() => {}), 200)
+      }
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [activeJob?.status, activeJob?.artifact_id])
+
+  useEffect(() => {
+    if (activeJob && activeJob.status === 'failed') setError(activeJob.error || 'sound generation failed')
+  }, [activeJob?.status, activeJob?.error])
 
   const handleGenerate = async (e) => {
     e.preventDefault()
@@ -50,28 +75,24 @@ export default function Sound() {
       if (timesignature.trim()) body.timesignature = timesignature.trim()
     }
 
-    setLoading(true)
-    setAudioUrl(null)
     setError(null)
+    setAudioUrl(null)
 
     try {
-      const blob = await soundApi.generate(body)
-      const url = URL.createObjectURL(blob)
-      setAudioUrl(url)
-      addToast('Sound generated', 'success')
-      setTimeout(() => audioRef.current?.play().catch(() => {}), 100)
+      const job = await submit('sound', body)
+      setActiveJobId(job.id)
+      addToast('Sound generation queued', 'info')
     } catch (err) {
       setError(err.message)
-    } finally {
-      setLoading(false)
     }
   }
 
   return (
     <div className="media-layout">
       <div className="media-controls">
-        <div className="page-header">
+        <div className="page-header media-page-header">
           <h1 className="page-title"><i className="fas fa-music" style={{ marginRight: 8, color: 'var(--color-accent)' }} />Sound Generation</h1>
+          <GpuGauge />
         </div>
 
         <form onSubmit={handleGenerate}>

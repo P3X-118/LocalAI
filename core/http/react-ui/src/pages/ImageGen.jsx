@@ -1,83 +1,147 @@
-import { useState, useRef } from 'react'
-import { useParams, useOutletContext } from 'react-router-dom'
-import ModelSelector from '../components/ModelSelector'
+import { useState, useEffect, useMemo } from 'react'
+import { useParams, useOutletContext, useLocation } from 'react-router-dom'
+import MultiModelSelector from '../components/MultiModelSelector'
 import { CAP_IMAGE } from '../utils/capabilities'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
-import { imageApi, fileToBase64 } from '../utils/api'
+import GpuGauge from '../components/GpuGauge'
+import ImagePicker from '../components/ImagePicker'
+import { generationsApi } from '../utils/api'
+import { useMediaJobs } from '../hooks/useMediaJobs'
+import { usePersistedState } from '../hooks/usePersistedState'
 
 const SIZES = ['256x256', '512x512', '768x768', '1024x1024']
+const COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 export default function ImageGen() {
   const { model: urlModel } = useParams()
   const { addToast } = useOutletContext()
-  const [model, setModel] = useState(urlModel || '')
-  const [prompt, setPrompt] = useState('')
-  const [negativePrompt, setNegativePrompt] = useState('')
-  const [size, setSize] = useState('512x512')
-  const [count, setCount] = useState(1)
-  const [steps, setSteps] = useState('')
-  const [seed, setSeed] = useState('')
-  const [loading, setLoading] = useState(false)
+  const { jobs, submit } = useMediaJobs()
+  const location = useLocation()
+  const [models, setModels] = usePersistedState('localai.studio.image.models', urlModel ? [urlModel] : [])
+  const [prompt, setPrompt] = usePersistedState('localai.studio.image.prompt', '')
+  const [negativePrompt, setNegativePrompt] = usePersistedState('localai.studio.image.negative', '')
+  const [size, setSize] = usePersistedState('localai.studio.image.size', '512x512')
+  const [count, setCount] = usePersistedState('localai.studio.image.count', 1)
+  const [steps, setSteps] = usePersistedState('localai.studio.image.steps', '')
+  const [seed, setSeed] = usePersistedState('localai.studio.image.seed', '')
   const [error, setError] = useState(null)
-  const [images, setImages] = useState([])
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showImageInputs, setShowImageInputs] = useState(false)
   const [sourceImage, setSourceImage] = useState(null)
   const [refImages, setRefImages] = useState([])
-  const sourceRef = useRef(null)
-  const refRef = useRef(null)
+  const [batchIds, setBatchIds] = useState([])      // job IDs from the latest Generate
+  const [batchImages, setBatchImages] = useState({}) // { [jobId]: { url } } as they complete
+  const [sourcePicker, setSourcePicker] = useState(false)
+  const [refPicker, setRefPicker] = useState(false)
+
+  // Honor pre-fills from the Generations page ("Use as source / references")
+  useEffect(() => {
+    const s = location.state || {}
+    if (s.sourceImage) {
+      setSourceImage(s.sourceImage)
+      setShowImageInputs(true)
+    }
+    if (Array.isArray(s.refImages) && s.refImages.length) {
+      setRefImages(s.refImages)
+      setShowImageInputs(true)
+    }
+    // One-shot: clear the state so a page refresh doesn't re-apply it.
+    if (s.sourceImage || s.refImages) {
+      window.history.replaceState({}, '')
+    }
+  }, [location.state])
+
+  // This Generate's jobs, mirrored from the global jobs map.
+  const batchJobs = useMemo(() => jobs.filter(j => batchIds.includes(j.id)), [jobs, batchIds])
+  const completedCount = batchJobs.filter(j => j.status === 'completed').length
+  const anyActive = batchJobs.some(j => j.status === 'queued' || j.status === 'running')
+  const loading = anyActive
+
+  // As each batch job completes, pull its artifact URL into the inline preview.
+  useEffect(() => {
+    batchJobs.forEach(j => {
+      if (j.status === 'completed' && j.artifact_id && !batchImages[j.id]) {
+        generationsApi.get(j.artifact_id).then(a => {
+          if (a?.output_url) setBatchImages(prev => ({ ...prev, [j.id]: { url: a.output_url } }))
+        }).catch(() => {})
+      }
+    })
+  }, [batchJobs, batchImages])
+
+  // Surface the first failure from the batch into the page error display.
+  useEffect(() => {
+    const failed = batchJobs.find(j => j.status === 'failed')
+    if (failed) setError(failed.error || 'generation failed')
+  }, [batchJobs])
+
+  const previewImages = Object.values(batchImages)
 
   const handleGenerate = async (e) => {
     e.preventDefault()
     if (!prompt.trim()) { addToast('Please enter a prompt', 'warning'); return }
-    if (!model) { addToast('Please select a model', 'warning'); return }
+    if (!models.length) { addToast('Please select at least one model', 'warning'); return }
 
-    setLoading(true)
-    setImages([])
     setError(null)
+    setBatchImages({})
 
     let combinedPrompt = prompt.trim()
     if (negativePrompt.trim()) combinedPrompt += '|' + negativePrompt.trim()
 
-    const body = { model, prompt: combinedPrompt, n: count, size }
-    if (steps) body.step = parseInt(steps)
-    if (seed) body.seed = parseInt(seed)
-    if (sourceImage) body.file = sourceImage
-    if (refImages.length > 0) body.ref_images = refImages
+    const base = { prompt: combinedPrompt, n: 1, size }
+    if (steps) base.step = parseInt(steps)
+    if (seed) base.seed = parseInt(seed)
+    if (sourceImage) base.file = sourceImage
+    if (refImages.length > 0) base.ref_images = refImages
+
+    // One background job per model, repeated `count` times.
+    const bodies = []
+    for (const model of models) {
+      for (let i = 0; i < count; i++) bodies.push({ ...base, model })
+    }
 
     try {
-      const data = await imageApi.generate(body)
-      setImages(data?.data || [])
-      if (!data?.data?.length) addToast('No images generated', 'warning')
+      const created = await Promise.all(bodies.map(b => submit('image', b)))
+      setBatchIds(created.map(j => j.id))
+      const total = created.length
+      addToast(
+        `Queued ${total} generation${total > 1 ? 's' : ''}${models.length > 1 ? ` across ${models.length} models` : ''} — track them in the Queue tab`,
+        'info'
+      )
     } catch (err) {
       setError(err.message)
-    } finally {
-      setLoading(false)
     }
   }
 
-  const handleSourceImage = async (e) => {
-    if (e.target.files[0]) setSourceImage(await fileToBase64(e.target.files[0]))
+  // Short preview label for an image value (URL or base64).
+  const previewLabel = (val) => {
+    if (!val) return ''
+    if (val.startsWith('http')) {
+      const tail = val.split('/').pop() || val
+      return tail.length > 30 ? tail.slice(0, 30) + '…' : tail
+    }
+    if (val.startsWith('/')) return val.split('/').pop() || val
+    return `${(val.length / 1024).toFixed(0)} KB image`
   }
-
-  const handleRefImages = async (e) => {
-    const arr = []
-    for (const f of e.target.files) arr.push(await fileToBase64(f))
-    setRefImages(prev => [...prev, ...arr])
+  // Thumbnail src — pass URLs straight through, base64 with data prefix.
+  const previewSrc = (val) => {
+    if (!val) return ''
+    if (val.startsWith('http') || val.startsWith('/')) return val
+    return `data:image/png;base64,${val}`
   }
 
   return (
     <div className="media-layout">
       <div className="media-controls">
-        <div className="page-header">
+        <div className="page-header media-page-header">
           <h1 className="page-title"><i className="fas fa-image" style={{ marginRight: 8, color: 'var(--color-accent)' }} />Image Generation</h1>
+          <GpuGauge />
         </div>
 
         <form onSubmit={handleGenerate}>
           <div className="form-group">
-            <label className="form-label">Model</label>
-            <ModelSelector value={model} onChange={setModel} capability={CAP_IMAGE} />
+            <label className="form-label">Models <span style={{ color: 'var(--color-text-muted)', fontWeight: 400, fontSize: '0.75rem' }}>— add several to fan out</span></label>
+            <MultiModelSelector value={models} onChange={setModels} capability={CAP_IMAGE} />
           </div>
           <div className="form-group">
             <label className="form-label">Prompt</label>
@@ -96,8 +160,10 @@ export default function ImageGen() {
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Count (1-4)</label>
-              <input className="input" type="number" min="1" max="4" value={count} onChange={(e) => setCount(parseInt(e.target.value) || 1)} />
+              <label className="form-label">Count (per model)</label>
+              <select className="model-selector" value={count} onChange={(e) => setCount(parseInt(e.target.value, 10))} style={{ width: '100%' }}>
+                {COUNTS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
           </div>
 
@@ -106,8 +172,8 @@ export default function ImageGen() {
           </div>
           {showAdvanced && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)' }}>
-              <div className="form-group"><label className="form-label">Steps</label><input className="input" type="number" value={steps} onChange={(e) => setSteps(e.target.value)} placeholder="20" /></div>
-              <div className="form-group"><label className="form-label">Seed</label><input className="input" type="number" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="Random" /></div>
+              <div className="form-group"><label className="form-label">Steps</label><input className="input" type="number" value={steps} onFocus={(e) => e.target.select()} onChange={(e) => setSteps(e.target.value)} placeholder="20" /></div>
+              <div className="form-group"><label className="form-label">Seed</label><input className="input" type="number" value={seed} onFocus={(e) => e.target.select()} onChange={(e) => setSeed(e.target.value)} placeholder="Random" /></div>
             </div>
           )}
 
@@ -115,44 +181,90 @@ export default function ImageGen() {
             <i className="fas fa-chevron-right" /> Image Inputs
           </div>
           {showImageInputs && (
-            <div style={{ marginBottom: 'var(--spacing-md)' }}>
-              <div className="form-group"><label className="form-label">Source Image (img2img)</label><input ref={sourceRef} type="file" accept="image/*" onChange={handleSourceImage} className="input" /></div>
+            <div className="image-inputs" style={{ marginBottom: 'var(--spacing-md)' }}>
               <div className="form-group">
-                <label className="form-label">Reference Images</label>
-                <input ref={refRef} type="file" accept="image/*" multiple onChange={handleRefImages} className="input" />
-                {refImages.length > 0 && <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{refImages.length} image(s) added</span>}
+                <label className="form-label">Source Image (img2img)</label>
+                {sourceImage ? (
+                  <div className="image-input-chip">
+                    <img src={previewSrc(sourceImage)} alt="source" />
+                    <span className="image-input-chip-label" title={sourceImage}>{previewLabel(sourceImage)}</span>
+                    <button type="button" className="image-input-chip-x" onClick={() => setSourceImage(null)} title="Remove">×</button>
+                  </div>
+                ) : (
+                  <button type="button" className="btn image-input-choose" onClick={() => setSourcePicker(true)}>
+                    <i className="fas fa-plus" /> Choose source image
+                  </button>
+                )}
+              </div>
+              <div className="form-group">
+                <label className="form-label">
+                  Reference Images
+                  {refImages.length > 0 && <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginLeft: 8 }}>({refImages.length} added)</span>}
+                </label>
+                <div className="image-input-chips">
+                  {refImages.map((r, i) => (
+                    <div key={i} className="image-input-chip image-input-chip-small">
+                      <img src={previewSrc(r)} alt="ref" />
+                      <button type="button" className="image-input-chip-x" onClick={() => setRefImages(refImages.filter((_, k) => k !== i))} title="Remove">×</button>
+                    </div>
+                  ))}
+                  <button type="button" className="btn image-input-choose" onClick={() => setRefPicker(true)}>
+                    <i className="fas fa-plus" /> Add references
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
           <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
-            {loading ? <><LoadingSpinner size="sm" /> Generating...</> : <><i className="fas fa-wand-magic-sparkles" /> Generate</>}
+            {loading ? <><LoadingSpinner size="sm" /> Generating {completedCount}/{batchJobs.length}…</> : <><i className="fas fa-wand-magic-sparkles" /> Generate{models.length * count > 1 ? ` ${models.length * count}` : ''}</>}
           </button>
         </form>
       </div>
 
       <div className="media-preview">
         <div className="media-result">
-          {loading ? (
-            <LoadingSpinner size="lg" />
+          {batchJobs.length > 0 ? (
+            <div className="media-result-stack">
+              <div className="media-batch-status">
+                {anyActive ? <LoadingSpinner size="sm" /> : <i className="fas fa-circle-check" style={{ color: 'var(--color-success, #6dd47d)' }} />}
+                <span>{completedCount} / {batchJobs.length} done</span>
+              </div>
+              {previewImages.length > 0 && (
+                <div className="media-result-grid">
+                  {previewImages.map((img, i) => (
+                    <div key={i}>
+                      <img src={img.url} alt={prompt} style={{ width: '100%', borderRadius: 'var(--radius-md)' }} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : error ? (
             <ErrorWithTraceLink message={error} />
-          ) : images.length > 0 ? (
-            <div className="media-result-grid">
-              {images.map((img, i) => (
-                <div key={i}>
-                  <img src={img.url || `data:image/png;base64,${img.b64_json}`} alt={prompt} style={{ width: '100%', borderRadius: 'var(--radius-md)' }} />
-                </div>
-              ))}
-            </div>
           ) : (
             <div style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>
               <i className="fas fa-image" style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)', opacity: 0.4 }} />
-              <p>Generated images will appear here</p>
+              <p>Generated images will appear here — and in the Queue tab as they run</p>
             </div>
           )}
         </div>
       </div>
+
+      <ImagePicker
+        open={sourcePicker}
+        multi={false}
+        title="Choose source image (img2img)"
+        onClose={() => setSourcePicker(false)}
+        onPick={(arr) => { if (arr?.[0]) setSourceImage(arr[0]); setSourcePicker(false) }}
+      />
+      <ImagePicker
+        open={refPicker}
+        multi={true}
+        title="Add reference images"
+        onClose={() => setRefPicker(false)}
+        onPick={(arr) => { setRefImages(prev => [...prev, ...(arr || [])]); }}
+      />
     </div>
   )
 }

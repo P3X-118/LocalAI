@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/gallery"
-	"github.com/mudler/LocalAI/core/schema"
-	"github.com/mudler/LocalAI/core/services"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/gallery"
+	"github.com/P3X-118/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/services"
 )
 
 // StartQuantizationJobEndpoint starts a new quantization job.

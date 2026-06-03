@@ -7,10 +7,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/mudler/LocalAI/core/schema"
-	"github.com/mudler/LocalAI/pkg/downloader"
-	"github.com/mudler/LocalAI/pkg/functions"
-	"github.com/mudler/LocalAI/pkg/reasoning"
+	"github.com/P3X-118/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/pkg/downloader"
+	"github.com/P3X-118/LocalAI/pkg/functions"
+	"github.com/P3X-118/LocalAI/pkg/reasoning"
 	"github.com/mudler/cogito"
 	"gopkg.in/yaml.v3"
 )
@@ -62,6 +62,7 @@ type ModelConfig struct {
 	// Diffusers
 	Diffusers Diffusers `yaml:"diffusers,omitempty" json:"diffusers,omitempty"`
 	Step      int       `yaml:"step,omitempty" json:"step,omitempty"`
+	Strength  float32   `yaml:"strength,omitempty" json:"strength,omitempty"` // img2img denoising strength default (0..1)
 
 	// GRPC Options
 	GRPC GRPC `yaml:"grpc,omitempty" json:"grpc,omitempty"`
@@ -385,7 +386,7 @@ func (cfg *ModelConfig) SetDefaults(opts ...ConfigLoaderOption) {
 	defaultTopK := 40
 	defaultMinP := 0.0
 	defaultTemp := 0.9
-	// https://github.com/mudler/LocalAI/issues/2780
+	// https://github.com/P3X-118/LocalAI/issues/2780
 	defaultMirostat := 0
 	defaultMirostatTAU := 5.0
 	defaultMirostatETA := 0.1

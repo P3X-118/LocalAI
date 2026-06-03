@@ -1,7 +1,7 @@
 package application
 
 import (
-	"github.com/mudler/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/pkg/model"
 	"github.com/mudler/xlog"
 )
 

@@ -11,7 +11,7 @@ Given a query and a set of documents, it will output similarity scores.
 
 We can use then the score to reorder the documents by relevance in our RAG system to increase its overall accuracy and filter out non-relevant results.
 
-![output](https://github.com/mudler/LocalAI/assets/2420543/ede67b25-fac4-4833-ae4f-78290e401e60)
+![output](https://github.com/P3X-118/LocalAI/assets/2420543/ede67b25-fac4-4833-ae4f-78290e401e60)
 
 LocalAI supports reranker models, and you can use them by using the `rerankers` backend, which uses [rerankers](https://github.com/AnswerDotAI/rerankers).
 

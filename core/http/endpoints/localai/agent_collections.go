@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/application"
+	"github.com/P3X-118/LocalAI/core/application"
 )
 
 func ListCollectionsEndpoint(app *application.Application) echo.HandlerFunc {

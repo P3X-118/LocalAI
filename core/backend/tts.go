@@ -11,13 +11,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/trace"
-	laudio "github.com/mudler/LocalAI/pkg/audio"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/trace"
+	laudio "github.com/P3X-118/LocalAI/pkg/audio"
 
-	"github.com/mudler/LocalAI/pkg/grpc/proto"
-	"github.com/mudler/LocalAI/pkg/model"
-	"github.com/mudler/LocalAI/pkg/utils"
+	"github.com/P3X-118/LocalAI/pkg/grpc/proto"
+	"github.com/P3X-118/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/pkg/utils"
 )
 
 func ModelTTS(

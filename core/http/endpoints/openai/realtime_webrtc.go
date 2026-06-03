@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/application"
-	model "github.com/mudler/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/core/application"
+	model "github.com/P3X-118/LocalAI/pkg/model"
 	"github.com/mudler/xlog"
 	"github.com/pion/webrtc/v4"
 )

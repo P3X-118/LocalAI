@@ -34,6 +34,9 @@ import Login from './pages/Login'
 import FineTune from './pages/FineTune'
 import Quantize from './pages/Quantize'
 import Studio from './pages/Studio'
+import Generations from './pages/Generations'
+import ActionsPlayground from './pages/ActionsPlayground'
+import GroupCreate from './pages/GroupCreate'
 import NotFound from './pages/NotFound'
 import Usage from './pages/Usage'
 import Users from './pages/Users'
@@ -70,6 +73,7 @@ const appChildren = [
   { path: 'sound', element: <Sound /> },
   { path: 'sound/:model', element: <Sound /> },
   { path: 'studio', element: <Studio /> },
+  { path: 'generations', element: <Generations /> },
   { path: 'talk', element: <Talk /> },
   { path: 'usage', element: <Usage /> },
   { path: 'account', element: <Account /> },
@@ -85,6 +89,8 @@ const appChildren = [
   { path: 'agents/:name/edit', element: <Feature feature="agents"><AgentCreate /></Feature> },
   { path: 'agents/:name/chat', element: <Feature feature="agents"><AgentChat /></Feature> },
   { path: 'agents/:name/status', element: <Feature feature="agents"><AgentStatus /></Feature> },
+  { path: 'actions-playground', element: <Feature feature="agents"><ActionsPlayground /></Feature> },
+  { path: 'agent-groups/new', element: <Feature feature="agents"><GroupCreate /></Feature> },
   { path: 'collections', element: <Feature feature="collections"><Collections /></Feature> },
   { path: 'collections/:name', element: <Feature feature="collections"><CollectionDetails /></Feature> },
   { path: 'skills', element: <Feature feature="skills"><Skills /></Feature> },

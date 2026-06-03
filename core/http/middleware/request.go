@@ -10,13 +10,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/schema"
-	"github.com/mudler/LocalAI/core/services"
-	"github.com/mudler/LocalAI/core/templates"
-	"github.com/mudler/LocalAI/pkg/functions"
-	"github.com/mudler/LocalAI/pkg/model"
-	"github.com/mudler/LocalAI/pkg/utils"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/services"
+	"github.com/P3X-118/LocalAI/core/templates"
+	"github.com/P3X-118/LocalAI/pkg/functions"
+	"github.com/P3X-118/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/pkg/utils"
 	"github.com/mudler/xlog"
 )
 

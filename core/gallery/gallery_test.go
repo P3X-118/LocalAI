@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 
 	"dario.cat/mergo"
-	"github.com/mudler/LocalAI/core/config"
-	. "github.com/mudler/LocalAI/core/gallery"
+	"github.com/P3X-118/LocalAI/core/config"
+	. "github.com/P3X-118/LocalAI/core/gallery"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"

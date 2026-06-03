@@ -3,7 +3,7 @@ package grammars_test
 import (
 	"strings"
 
-	. "github.com/mudler/LocalAI/pkg/functions/grammars"
+	. "github.com/P3X-118/LocalAI/pkg/functions/grammars"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

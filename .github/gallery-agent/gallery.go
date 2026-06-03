@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/mudler/LocalAI/core/gallery/importers"
+	"github.com/P3X-118/LocalAI/core/gallery/importers"
 )
 
 func formatTextContent(text string) string {

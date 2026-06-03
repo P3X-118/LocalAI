@@ -16,14 +16,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/http/middleware"
-	"github.com/mudler/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/http/middleware"
+	"github.com/P3X-118/LocalAI/core/schema"
 
-	"github.com/mudler/LocalAI/core/backend"
+	"github.com/P3X-118/LocalAI/core/backend"
+	"github.com/P3X-118/LocalAI/core/services"
 
-	model "github.com/mudler/LocalAI/pkg/model"
-	"github.com/mudler/LocalAI/pkg/utils"
+	model "github.com/P3X-118/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/pkg/utils"
 	"github.com/mudler/xlog"
 )
 
@@ -73,6 +74,7 @@ func downloadFile(url string) (string, error) {
 // @Router /v1/images/generations [post]
 func ImageEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfig *config.ApplicationConfig) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		handlerStartedAt := time.Now()
 		input, ok := c.Get(middleware.CONTEXT_LOCALS_KEY_LOCALAI_REQUEST).(*schema.OpenAIRequest)
 		if !ok || input.Model == "" {
 			xlog.Error("Image Endpoint - Invalid Input")
@@ -171,6 +173,13 @@ func ImageEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfi
 					step = input.Step
 				}
 
+				// img2img denoising strength: request overrides the per-model
+				// default; 0 means "unset" and the backend applies its default.
+				strength := config.Strength
+				if input.Strength != 0 {
+					strength = input.Strength
+				}
+
 				tempDir := ""
 				if !b64JSON {
 					tempDir = filepath.Join(appConfig.GeneratedContentDir, "images")
@@ -197,7 +206,7 @@ func ImageEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfi
 					inputSrc = inputImages[0]
 				}
 
-				fn, err := backend.ImageGeneration(height, width, step, *config.Seed, positive_prompt, negative_prompt, inputSrc, output, ml, *config, appConfig, refImages)
+				fn, err := backend.ImageGeneration(height, width, step, *config.Seed, strength, positive_prompt, negative_prompt, inputSrc, output, ml, *config, appConfig, refImages)
 				if err != nil {
 					return err
 				}
@@ -219,6 +228,36 @@ func ImageEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfi
 					item.URL, err = url.JoinPath(baseURL, "generated-images", base)
 					if err != nil {
 						return err
+					}
+
+					// Persistent history sidecar — written next to the artifact so the
+					// /api/generations endpoints can list past generations. Skipped in
+					// b64 mode (the file is removed before this point).
+					seed := 0
+					if config.Seed != nil {
+						seed = *config.Seed
+					}
+					if err := services.NewMediaHistory(appConfig).Write(&schema.MediaArtifact{
+						UserID:         services.RequestUserID(c),
+						Type:           schema.MediaImage,
+						Model:          input.Model,
+						Prompt:         positive_prompt,
+						NegativePrompt: negative_prompt,
+						Params: map[string]any{
+							"width":  width,
+							"height": height,
+							"step":   step,
+							"seed":   seed,
+							"n":      input.N,
+						},
+						CreatedAt:  time.Now().UTC(),
+						DurationMs: time.Since(handlerStartedAt).Milliseconds(),
+						OutputPath: output,
+						OutputURL:  item.URL,
+						RequestID:  c.Response().Header().Get(echo.HeaderXRequestID),
+						JobID:      c.Request().Header.Get("X-LocalAI-Job-ID"),
+					}); err != nil {
+						xlog.Warn("media history sidecar write failed", "err", err, "path", output)
 					}
 				}
 

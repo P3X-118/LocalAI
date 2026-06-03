@@ -24,7 +24,7 @@ We provide support and updates for certain versions of our software. The followi
 
 If you are running an unsupported or soon-to-be-unsupported version, we recommend upgrading as soon as possible:
 
-- **From 1.x to 3.x:** Version 1.x reached end-of-life on January 1, 2024. Review the [release notes](https://github.com/mudler/LocalAI/releases) for breaking changes across major versions, and upgrade directly to the latest 3.x release.
+- **From 1.x to 3.x:** Version 1.x reached end-of-life on January 1, 2024. Review the [release notes](https://github.com/P3X-118/LocalAI/releases) for breaking changes across major versions, and upgrade directly to the latest 3.x release.
 - **From 2.x to 3.x:** While 2.x still receives critical security patches until December 31, 2025, we recommend planning your migration to 3.x to benefit from ongoing improvements and full support.
 
 Please ensure that you are using a supported version to receive the latest security updates.

@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mudler/LocalAI/pkg/system"
-	"github.com/mudler/LocalAI/pkg/utils"
+	"github.com/P3X-118/LocalAI/pkg/system"
+	"github.com/P3X-118/LocalAI/pkg/utils"
 
 	"github.com/mudler/xlog"
 )

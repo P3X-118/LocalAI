@@ -44,7 +44,7 @@ If you need to build the container yourself, use the following commands:
 ### CUDA 12 (for AGX Orin and similar platforms)
 
 ```bash
-git clone https://github.com/mudler/LocalAI
+git clone https://github.com/P3X-118/LocalAI
 
 cd LocalAI
 
@@ -54,7 +54,7 @@ docker build --build-arg SKIP_DRIVERS=true --build-arg BUILD_TYPE=cublas --build
 ### CUDA 13 (for DGX Spark)
 
 ```bash
-git clone https://github.com/mudler/LocalAI
+git clone https://github.com/P3X-118/LocalAI
 
 cd LocalAI
 

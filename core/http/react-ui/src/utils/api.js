@@ -130,6 +130,11 @@ export const resourcesApi = {
   get: () => fetchJSON(API_CONFIG.endpoints.resources),
 }
 
+// Lightweight live GPU/memory stats for the in-chat gauge (non-admin, cheap)
+export const gpuApi = {
+  get: () => fetchJSON(API_CONFIG.endpoints.gpu),
+}
+
 // Operations API
 export const operationsApi = {
   list: () => fetchJSON(API_CONFIG.endpoints.operations),
@@ -236,6 +241,62 @@ export const soundApi = {
     }
     return response.blob()
   },
+}
+
+// Agent actions playground — list available actions, fetch their parameter
+// definitions, and execute them with config + params. Backed by our
+// /api/agents/actions/* routes (handlers already in agent_pool service).
+export const actionsApi = {
+  list: () => fetchJSON(API_CONFIG.endpoints.agentActions),
+  getDefinition: (name, config = {}) =>
+    postJSON(API_CONFIG.endpoints.agentActionDefinition(name), { config }),
+  execute: (name, body) =>
+    postJSON(API_CONFIG.endpoints.agentActionRun(name), body),
+  getConfigMetadata: () => fetchJSON(API_CONFIG.endpoints.agentConfigMetadata),
+}
+
+// Agent groups — LLM-guided multi-agent team creation. POST a free-form
+// team description, get back N agent profiles. Then bulk-create them all
+// under a shared agent_config. Backed by our /api/agents/group/*.
+export const agentGroupsApi = {
+  generateProfiles: (description) =>
+    postJSON(API_CONFIG.endpoints.agentGroupGenerateProfiles, { description }),
+  create: (body) =>
+    postJSON(API_CONFIG.endpoints.agentGroupCreate, body),
+}
+
+// Generated-media history (browse past image/video/audio outputs and their
+// prompts, params, timestamps — backed by sidecar JSON next to each artifact).
+export const generationsApi = {
+  list: ({ type, limit, offset } = {}) => {
+    const qs = new URLSearchParams()
+    if (type) qs.set('type', type)
+    if (limit) qs.set('limit', String(limit))
+    if (offset) qs.set('offset', String(offset))
+    const q = qs.toString()
+    return fetchJSON(`${API_CONFIG.endpoints.generations}${q ? '?' + q : ''}`)
+  },
+  get: (id) => fetchJSON(API_CONFIG.endpoints.generation(id)),
+  remove: (id) => fetchJSON(API_CONFIG.endpoints.generation(id), { method: 'DELETE' }),
+}
+
+// Async media-generation jobs — submit a sync-shape body, get back a job
+// record immediately, subscribe to SSE for live status, navigate away while
+// it runs.
+export const mediaJobsApi = {
+  enqueue: (type, body) => postJSON(API_CONFIG.endpoints.enqueueMediaJob(type), body),
+  list: ({ limit, offset } = {}) => {
+    const qs = new URLSearchParams()
+    if (limit) qs.set('limit', String(limit))
+    if (offset) qs.set('offset', String(offset))
+    const q = qs.toString()
+    return fetchJSON(`${API_CONFIG.endpoints.mediaJobs}${q ? '?' + q : ''}`)
+  },
+  get: (id) => fetchJSON(API_CONFIG.endpoints.mediaJob(id)),
+  cancel: (id) => fetchJSON(API_CONFIG.endpoints.mediaJob(id), { method: 'DELETE' }),
+  // SSE: caller opens EventSource(apiUrl(API_CONFIG.endpoints.mediaJobSSE(id)))
+  // and listens for 'status' events (JSON payload = MediaJob snapshot).
+  sseUrl: (id) => apiUrl(API_CONFIG.endpoints.mediaJobSSE(id)),
 }
 
 // Audio transcription

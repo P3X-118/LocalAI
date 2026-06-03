@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/mudler/LocalAI/pkg/downloader"
+	"github.com/P3X-118/LocalAI/pkg/downloader"
 	gguf "github.com/gpustack/gguf-parser-go"
 )
 

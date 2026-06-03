@@ -9,7 +9,7 @@ type = "home"
 **No cloud, no limits, no compromise.**
 
 {{% notice tip %}}
-**[⭐ Star us on GitHub](https://github.com/mudler/LocalAI)** - 40k+ stars and growing!
+**[⭐ Star us on GitHub](https://github.com/P3X-118/LocalAI)** - 40k+ stars and growing!
 
 **Drop-in replacement for OpenAI API** - modular suite of tools that work seamlessly together or independently. 
 
@@ -59,5 +59,5 @@ For complete installation instructions, see the [Installation guide](/installati
 - [Model compatibility](/model-compatibility/)
 - [Try out examples](https://github.com/mudler/LocalAI-examples)
 - [Join the community](https://discord.gg/uJAeKSAGDy)
-- [Check the LocalAI Github repository](https://github.com/mudler/LocalAI)
+- [Check the LocalAI Github repository](https://github.com/P3X-118/LocalAI)
 - [Check the LocalAGI Github repository](https://github.com/mudler/LocalAGI)

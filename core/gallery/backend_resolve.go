@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mudler/LocalAI/pkg/downloader"
-	"github.com/mudler/LocalAI/pkg/xsync"
+	"github.com/P3X-118/LocalAI/pkg/downloader"
+	"github.com/P3X-118/LocalAI/pkg/xsync"
 	"github.com/mudler/xlog"
 	"gopkg.in/yaml.v3"
 )

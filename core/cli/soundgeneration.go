@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mudler/LocalAI/core/backend"
-	cliContext "github.com/mudler/LocalAI/core/cli/context"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/pkg/model"
-	"github.com/mudler/LocalAI/pkg/system"
+	"github.com/P3X-118/LocalAI/core/backend"
+	cliContext "github.com/P3X-118/LocalAI/core/cli/context"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/pkg/system"
 	"github.com/mudler/xlog"
 )
 

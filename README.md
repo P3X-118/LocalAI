@@ -56,11 +56,11 @@ https://github.com/user-attachments/assets/6270b331-e21d-4087-a540-6290006b381a
 
 ### macOS
 
-<a href="https://github.com/mudler/LocalAI/releases/latest/download/LocalAI.dmg">
+<a href="https://github.com/P3X-118/LocalAI/releases/latest/download/LocalAI.dmg">
   <img src="https://img.shields.io/badge/Download-macOS-blue?style=for-the-badge&logo=apple&logoColor=white" alt="Download LocalAI for macOS"/>
 </a>
 
-> **Note:** The DMG is not signed by Apple. After installing, run: `sudo xattr -d com.apple.quarantine /Applications/LocalAI.app`. See [#6268](https://github.com/mudler/LocalAI/issues/6268) for details.
+> **Note:** The DMG is not signed by Apple. After installing, run: `sudo xattr -d com.apple.quarantine /Applications/LocalAI.app`. See [#6268](https://github.com/P3X-118/LocalAI/issues/6268) for details.
 
 ### Containers (Docker, podman, ...)
 
@@ -127,17 +127,17 @@ For more details, see the [Getting Started guide](https://localai.io/basics/gett
 
 ## Latest News
 
-- **March 2026**: [Agent management](https://github.com/mudler/LocalAI/pull/8820), [New React UI](https://github.com/mudler/LocalAI/pull/8772), [WebRTC](https://github.com/mudler/LocalAI/pull/8790), [MLX-distributed via P2P and RDMA](https://github.com/mudler/LocalAI/pull/8801), [MCP Apps, MCP Client-side](https://github.com/mudler/LocalAI/pull/8947)
-- **February 2026**: [Realtime API for audio-to-audio with tool calling](https://github.com/mudler/LocalAI/pull/6245), [ACE-Step 1.5 support](https://github.com/mudler/LocalAI/pull/8396)
-- **January 2026**: **LocalAI 3.10.0** — Anthropic API support, Open Responses API, video & image generation (LTX-2), unified GPU backends, tool streaming, Moonshine, Pocket-TTS. [Release notes](https://github.com/mudler/LocalAI/releases/tag/v3.10.0)
-- **December 2025**: [Dynamic Memory Resource reclaimer](https://github.com/mudler/LocalAI/pull/7583), [Automatic multi-GPU model fitting (llama.cpp)](https://github.com/mudler/LocalAI/pull/7584), [Vibevoice backend](https://github.com/mudler/LocalAI/pull/7494)
-- **November 2025**: [Import models via URL](https://github.com/mudler/LocalAI/pull/7245), [Multiple chats and history](https://github.com/mudler/LocalAI/pull/7325)
+- **March 2026**: [Agent management](https://github.com/P3X-118/LocalAI/pull/8820), [New React UI](https://github.com/P3X-118/LocalAI/pull/8772), [WebRTC](https://github.com/P3X-118/LocalAI/pull/8790), [MLX-distributed via P2P and RDMA](https://github.com/P3X-118/LocalAI/pull/8801), [MCP Apps, MCP Client-side](https://github.com/P3X-118/LocalAI/pull/8947)
+- **February 2026**: [Realtime API for audio-to-audio with tool calling](https://github.com/P3X-118/LocalAI/pull/6245), [ACE-Step 1.5 support](https://github.com/P3X-118/LocalAI/pull/8396)
+- **January 2026**: **LocalAI 3.10.0** — Anthropic API support, Open Responses API, video & image generation (LTX-2), unified GPU backends, tool streaming, Moonshine, Pocket-TTS. [Release notes](https://github.com/P3X-118/LocalAI/releases/tag/v3.10.0)
+- **December 2025**: [Dynamic Memory Resource reclaimer](https://github.com/P3X-118/LocalAI/pull/7583), [Automatic multi-GPU model fitting (llama.cpp)](https://github.com/P3X-118/LocalAI/pull/7584), [Vibevoice backend](https://github.com/P3X-118/LocalAI/pull/7494)
+- **November 2025**: [Import models via URL](https://github.com/P3X-118/LocalAI/pull/7245), [Multiple chats and history](https://github.com/P3X-118/LocalAI/pull/7325)
 - **October 2025**: [Model Context Protocol (MCP)](https://localai.io/docs/features/mcp/) support for agentic capabilities
 - **September 2025**: New Launcher for macOS and Linux, extended backend support for Mac and Nvidia L4T, MLX-Audio, WAN 2.2
 - **August 2025**: MLX, MLX-VLM, Diffusers, llama.cpp now supported on Apple Silicon
-- **July 2025**: All backends migrated outside the main binary — [lightweight, modular architecture](https://github.com/mudler/LocalAI/releases/tag/v3.2.0)
+- **July 2025**: All backends migrated outside the main binary — [lightweight, modular architecture](https://github.com/P3X-118/LocalAI/releases/tag/v3.2.0)
 
-For older news and full release notes, see [GitHub Releases](https://github.com/mudler/LocalAI/releases) and the [News page](https://localai.io/basics/news/).
+For older news and full release notes, see [GitHub Releases](https://github.com/P3X-118/LocalAI/releases) and the [News page](https://localai.io/basics/news/).
 
 ## Features
 
@@ -211,7 +211,7 @@ A huge thank you to our generous sponsors who support this project covering CI e
     <img height="200" src="https://github.com/user-attachments/assets/72eab1dd-8b93-4fc0-9ade-84db49f24962">
   </a>
   <a href="https://www.premai.io/" target="blank">
-    <img height="200" src="https://github.com/mudler/LocalAI/assets/2420543/42e4ca83-661e-4f79-8e46-ae43689683d6"> <br>
+    <img height="200" src="https://github.com/P3X-118/LocalAI/assets/2420543/42e4ca83-661e-4f79-8e46-ae43689683d6"> <br>
   </a>
 </p>
 

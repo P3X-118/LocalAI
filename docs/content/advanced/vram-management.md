@@ -17,7 +17,7 @@ By default, LocalAI keeps models loaded in memory once they're first used. This 
 - Models remain in memory even when not actively being used
 - There's no automatic mechanism to unload models to make room for new ones, unless done manually via the web interface
 
-This is a common issue when working with GPU-accelerated models, as VRAM is typically more limited than system RAM. For more context, see issues [#6068](https://github.com/mudler/LocalAI/issues/6068), [#7269](https://github.com/mudler/LocalAI/issues/7269), and [#5352](https://github.com/mudler/LocalAI/issues/5352).
+This is a common issue when working with GPU-accelerated models, as VRAM is typically more limited than system RAM. For more context, see issues [#6068](https://github.com/P3X-118/LocalAI/issues/6068), [#7269](https://github.com/P3X-118/LocalAI/issues/7269), and [#5352](https://github.com/P3X-118/LocalAI/issues/5352).
 
 ## Solution 1: Max Active Backends (LRU Eviction)
 

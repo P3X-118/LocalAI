@@ -9,10 +9,10 @@ import (
 	"github.com/mudler/xlog"
 	"gopkg.in/yaml.v3"
 
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/gallery"
-	"github.com/mudler/LocalAI/pkg/downloader"
-	hfapi "github.com/mudler/LocalAI/pkg/huggingface-api"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/gallery"
+	"github.com/P3X-118/LocalAI/pkg/downloader"
+	hfapi "github.com/P3X-118/LocalAI/pkg/huggingface-api"
 )
 
 var defaultImporters = []Importer{

@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/application"
-	"github.com/mudler/LocalAI/core/http/endpoints/localai"
+	"github.com/P3X-118/LocalAI/core/application"
+	"github.com/P3X-118/LocalAI/core/http/endpoints/localai"
 )
 
 func RegisterAgentPoolRoutes(e *echo.Echo, app *application.Application,
@@ -50,6 +50,12 @@ func RegisterAgentPoolRoutes(e *echo.Echo, app *application.Application,
 	ag.GET("/actions", localai.ListActionsEndpoint(app))
 	ag.POST("/actions/:name/definition", localai.GetActionDefinitionEndpoint(app))
 	ag.POST("/actions/:name/run", localai.ExecuteActionEndpoint(app))
+
+	// Group creation wizard — ports upstream LocalAGI webui/app.go:700-770
+	// from Fiber to Echo. LLM-guided JSON to invent N agent profiles, then
+	// bulk-create them under the caller's user ID.
+	ag.POST("/group/generateProfiles", localai.GenerateGroupProfilesEndpoint(app))
+	ag.POST("/group/create", localai.CreateGroupEndpoint(app))
 
 	// Skills routes — require "skills" feature
 	sg := e.Group("/api/agents/skills", poolReadyMw, skillsMw)

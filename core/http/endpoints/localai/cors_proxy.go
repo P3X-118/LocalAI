@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/config"
 	"github.com/mudler/xlog"
 )
 

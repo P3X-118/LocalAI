@@ -1905,10 +1905,49 @@
 .chat-token-info {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  gap: var(--spacing-xs) var(--spacing-md);
   padding: var(--spacing-xs) var(--spacing-lg);
   font-size: 0.75rem;
   color: var(--color-text-muted);
+}
+
+/* Live GPU gauge (sits at the right end of the token bar) */
+.gpu-gauge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+}
+.gpu-gauge-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.gpu-gauge-key {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.gpu-gauge-bar {
+  width: 44px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--color-bg-primary);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.gpu-gauge-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 600ms ease, background-color 600ms ease;
+}
+.gpu-gauge-pct {
+  font-weight: 600;
+  min-width: 2.6em;
+  text-align: right;
 }
 
 .chat-streaming-cursor::after {
@@ -2703,6 +2742,21 @@
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
   font-weight: 500;
+}
+
+.studio-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1;
 }
 
 /* Two-column layout for media generation pages */
@@ -3602,4 +3656,1329 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ===== Mobile UX hardening =====
+   Stops iOS focus-zoom, prevents horizontal overflow / edge shift, respects
+   device safe areas, and tunes touch behavior. Pinch-zoom stays available. */
+
+/* Remove the 300ms double-tap delay and accidental double-tap zoom on
+   interactive controls (pinch-zoom and panning still work). */
+button,
+.btn,
+[role="button"],
+.nav-item,
+.toggle,
+.canvas-mode-toggle,
+a {
+  touch-action: manipulation;
+}
+
+/* Long unbreakable strings (URLs, hashes) must not widen the chat column. */
+.chat-message-content {
+  overflow-wrap: anywhere;
+}
+.chat-message-content img,
+.chat-message-content video,
+.chat-message-content table,
+.chat-message-content canvas {
+  max-width: 100%;
+}
+
+/* Keep inner scrolls from chaining to the page (pull-to-refresh / bounce). */
+.chat-messages,
+.sidebar,
+.chat-sidebar,
+.chat-settings-drawer {
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 1023px) {
+  /* iOS Safari auto-zooms when a focused control has font-size < 16px. These
+     selectors match the originals' specificity and come later in the cascade,
+     so 16px wins on touch layouts (pinch-zoom is unaffected). */
+  input,
+  textarea,
+  select,
+  .input,
+  .textarea,
+  .chat-input,
+  .chat-search-input,
+  .home-textarea,
+  .model-selector {
+    font-size: 16px;
+  }
+
+  /* Respect notches / home indicator (requires viewport-fit=cover). env()
+     resolves to 0 on devices without insets, so the spacing fallback wins. */
+  .mobile-header {
+    padding-top: max(var(--spacing-sm), env(safe-area-inset-top));
+    padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+    padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+  }
+  .chat-input-area {
+    padding-bottom: max(var(--spacing-sm), env(safe-area-inset-bottom));
+  }
+  .sidebar {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Toasts must never push the viewport edge on narrow screens. */
+  .toast-container {
+    top: max(var(--spacing-md), env(safe-area-inset-top));
+    right: max(var(--spacing-md), env(safe-area-inset-right));
+    left: max(var(--spacing-md), env(safe-area-inset-left));
+  }
+  .toast {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Finger-friendly primary chat controls. */
+  .chat-send-btn,
+  .chat-stop-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Media generation: JobsDock (corner card) + Generations history page.
+   Added with the background-jobs feature so users can submit a generation,
+   walk away, and review past outputs from a persistent history.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.jobs-dock {
+  position: fixed;
+  right: var(--spacing-md, 16px);
+  bottom: var(--spacing-md, 16px);
+  width: min(360px, calc(100vw - 32px));
+  max-height: 70vh;
+  background: var(--color-bg-elevated, #1a1a1a);
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-size: 0.85rem;
+}
+
+.jobs-dock-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--color-bg, #111);
+  border-bottom: 1px solid var(--color-border, #2a2a2a);
+  font-weight: 600;
+  color: var(--color-text, #e8e8e8);
+}
+
+.jobs-dock-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+
+.jobs-dock-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--color-bg, #111);
+  border: 1px solid var(--color-border, #222);
+  border-radius: 6px;
+}
+
+.jobs-dock-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jobs-dock-model {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text, #e8e8e8);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+}
+
+.jobs-dock-badge {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.badge-pending  { background: rgba(180, 180, 0, 0.15); color: #d8c83a; }
+.badge-running  { background: rgba(80, 160, 255, 0.18); color: #6cb8ff; }
+.badge-success  { background: rgba(60, 200, 80, 0.18); color: #6dd47d; }
+.badge-error    { background: rgba(255, 90, 90, 0.18); color: #ff7a7a; }
+.badge-muted    { background: rgba(200, 200, 200, 0.12); color: #aaa; }
+
+.jobs-dock-progress {
+  height: 3px;
+  background: var(--color-border, #2a2a2a);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.jobs-dock-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary, #6cb8ff), var(--color-accent, #f0a83a));
+  transition: width 0.3s ease;
+}
+
+.jobs-dock-error {
+  font-size: 0.72rem;
+  color: #ff7a7a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jobs-dock-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+.jobs-dock-link,
+.jobs-dock-cancel {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border, #2a2a2a);
+  background: transparent;
+  color: var(--color-text-muted, #aaa);
+  cursor: pointer;
+  text-decoration: none;
+}
+.jobs-dock-link {
+  color: var(--color-primary, #6cb8ff);
+  border-color: rgba(108, 184, 255, 0.4);
+}
+.jobs-dock-link:hover,
+.jobs-dock-cancel:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text, #e8e8e8);
+}
+
+.jobs-dock-more {
+  text-align: center;
+  font-size: 0.78rem;
+  padding: 6px;
+  color: var(--color-text-muted, #aaa);
+  text-decoration: none;
+}
+.jobs-dock-more:hover { color: var(--color-text, #e8e8e8); }
+
+@media (max-width: 640px) {
+  .jobs-dock {
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: auto;
+  }
+}
+
+/* ── Generations history page ─────────────────────────────────────────── */
+
+.gen-tabs {
+  display: flex;
+  gap: 8px;
+  margin: var(--spacing-md, 16px) 0 var(--spacing-md, 16px) 0;
+  flex-wrap: wrap;
+}
+
+.gen-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, #2a2a2a);
+  background: transparent;
+  color: var(--color-text-muted, #aaa);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+.gen-tab:hover {
+  border-color: var(--color-primary, #6cb8ff);
+  color: var(--color-text, #e8e8e8);
+}
+.gen-tab-active {
+  background: rgba(108, 184, 255, 0.12);
+  border-color: var(--color-primary, #6cb8ff);
+  color: var(--color-primary, #6cb8ff);
+}
+.gen-tab-count {
+  font-size: 0.7rem;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text, #e8e8e8);
+}
+.gen-tab-refresh {
+  margin-left: auto;
+}
+
+.gen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--spacing-md, 16px);
+}
+
+.gen-card {
+  position: relative;
+  background: var(--color-bg-elevated, #1a1a1a);
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.gen-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary, #6cb8ff);
+}
+.gen-card:focus-visible {
+  outline: 2px solid var(--color-primary, #6cb8ff);
+  outline-offset: 2px;
+}
+
+.gen-card-image,
+.gen-card-video {
+  width: 100%;
+  display: block;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #000;
+}
+
+.gen-card-audio {
+  width: 100%;
+  display: block;
+  background: var(--color-bg, #111);
+}
+
+.gen-card-preview {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted, #888);
+  background: var(--color-bg, #111);
+}
+.gen-card-preview-blank {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gen-card-body {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gen-card-prompt {
+  font-size: 0.82rem;
+  color: var(--color-text, #e8e8e8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gen-card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--color-text-muted, #888);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.gen-card-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.gen-card:hover .gen-card-delete { opacity: 1; }
+.gen-card-delete:hover { background: rgba(255, 90, 90, 0.85); }
+
+/* ── Shared modal shell ──────────────────────────────────────────────────
+   The backdrop lives in auth.css; these style the panel/header/body/close
+   used by the detail, image-picker and remix dialogs. Previously these
+   classes had no base styling at all, so the panel had no frame and tall
+   content (e.g. a large generated image) pushed the action buttons off the
+   bottom of the screen with no way to scroll to them. */
+.modal-content {
+  background: var(--color-bg-secondary, #161616);
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: min(560px, 92vw);
+  max-height: 88vh;
+  animation: slideUp 150ms ease;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border-subtle, #2a2a2a);
+  flex-shrink: 0;
+}
+.modal-header h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.modal-header h2 i { color: var(--color-accent, #f0a83a); }
+.modal-close {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, #2a2a2a);
+  background: transparent;
+  color: var(--color-text-muted, #aaa);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.modal-close:hover { background: rgba(255, 255, 255, 0.06); color: var(--color-text, #e8e8e8); }
+.modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+/* ── Generation detail modal — two panes: contained media on the left,
+   prompt / params / actions on the right. The media is never cropped or
+   over-zoomed (object-fit: contain), unlike the square grid thumbnails. */
+.gen-detail { width: min(920px, 94vw); }
+.gen-detail .modal-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.gen-detail-media {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.gen-detail-image,
+.gen-detail-video {
+  width: 100%;
+  max-height: 62vh;
+  object-fit: contain;
+  background: #000;
+  border-radius: 8px;
+  display: block;
+}
+.gen-detail-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md, 16px);
+  min-width: 0;
+}
+.gen-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gen-detail-section label {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #888);
+}
+.gen-detail-section pre {
+  margin: 0;
+  background: var(--color-bg, #111);
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  color: var(--color-text, #e8e8e8);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.gen-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #888);
+  font-family: 'JetBrains Mono', monospace;
+}
+.gen-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+@media (max-width: 720px) {
+  .gen-detail .modal-body { grid-template-columns: 1fr; }
+}
+
+/* JobsDock — minimize/expand affordances + header controls */
+
+.jobs-dock-header-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jobs-dock-header-link,
+.jobs-dock-header-btn {
+  background: transparent;
+  border: 1px solid var(--color-border, #2a2a2a);
+  color: var(--color-text-muted, #aaa);
+  width: 26px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 0.75rem;
+  padding: 0;
+}
+.jobs-dock-header-link:hover,
+.jobs-dock-header-btn:hover {
+  color: var(--color-text, #e8e8e8);
+  border-color: var(--color-primary, #6cb8ff);
+}
+
+/* Minimized state: a small pill in the same corner with the active count */
+.jobs-dock-collapsed {
+  width: auto;
+  height: 40px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border, #2a2a2a);
+  background: var(--color-bg-elevated, #1a1a1a);
+  color: var(--color-text, #e8e8e8);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  max-height: none;
+}
+.jobs-dock-collapsed:hover {
+  border-color: var(--color-primary, #6cb8ff);
+}
+.jobs-dock-collapsed-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  background: var(--color-primary, #6cb8ff);
+  color: var(--color-bg, #111);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* GpuGauge mounted in JobsDock header — show as a strip under the title row */
+.jobs-dock-gauge {
+  padding: 6px 12px 0;
+  border-top: 1px solid var(--color-border, #2a2a2a);
+  display: flex;
+  align-items: center;
+  font-size: 0.72rem;
+}
+.jobs-dock-gauge .gpu-gauge {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.jobs-dock-gauge .gpu-gauge-bar { flex: 1; max-width: 140px; }
+.jobs-dock-gauge:empty { display: none; }
+
+/* Studio page headers (Image / Video / TTS / Sound) — gauge on the right */
+.media-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md, 16px);
+  flex-wrap: wrap;
+}
+.media-page-header .gpu-gauge {
+  font-size: 0.78rem;
+  opacity: 0.95;
+}
+
+/* ImagePicker modal — tabs + content */
+
+.image-picker { width: min(720px, 90vw); max-height: 80vh; display: flex; flex-direction: column; }
+
+.image-picker-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 var(--spacing-md, 16px);
+  border-bottom: 1px solid var(--color-border, #2a2a2a);
+}
+.image-picker-tab {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted, #aaa);
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  border-bottom: 2px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.image-picker-tab:hover { color: var(--color-text, #e8e8e8); }
+.image-picker-tab-active {
+  color: var(--color-primary, #6cb8ff);
+  border-bottom-color: var(--color-primary, #6cb8ff);
+}
+
+.image-picker-body {
+  padding: var(--spacing-md, 16px);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.image-picker-upload,
+.image-picker-url {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm, 8px);
+  align-items: flex-start;
+}
+.image-picker-url .input { width: 100%; }
+
+.image-picker-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #888);
+  margin: 4px 0 0;
+}
+.image-picker-hint code {
+  background: var(--color-bg, #111);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.image-picker-history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+.image-picker-history-card {
+  position: relative;
+  border: 2px solid transparent;
+  background: var(--color-bg, #111);
+  border-radius: 6px;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+}
+.image-picker-history-card img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.image-picker-history-card:hover {
+  border-color: var(--color-primary, #6cb8ff);
+}
+.image-picker-history-card-picked {
+  border-color: var(--color-primary, #6cb8ff);
+  box-shadow: 0 0 0 2px rgba(108, 184, 255, 0.25);
+}
+.image-picker-history-check {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 22px; height: 22px;
+  background: rgba(0,0,0,0.55);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary, #6cb8ff);
+  font-size: 0.9rem;
+}
+.image-picker-history-actions {
+  margin-top: var(--spacing-md, 16px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ImageGen — input chips for source + ref images */
+
+.image-inputs { display: flex; flex-direction: column; gap: var(--spacing-sm, 8px); }
+.image-input-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-bg, #111);
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+.image-input-chip img {
+  width: 36px; height: 36px; object-fit: cover; border-radius: 4px; flex-shrink: 0;
+}
+.image-input-chip-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #aaa);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 200px;
+}
+.image-input-chip-x {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted, #aaa);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.image-input-chip-x:hover { color: #ff7a7a; }
+.image-input-chip-small img { width: 28px; height: 28px; }
+
+.image-input-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.image-input-choose { font-size: 0.82rem; padding: 6px 10px; }
+
+/* Generations — select mode bar + card pick state */
+
+.gen-select-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--color-bg-elevated, #1a1a1a);
+  border: 1px solid var(--color-primary, #6cb8ff);
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: var(--spacing-md, 16px);
+  gap: var(--spacing-sm, 8px);
+  flex-wrap: wrap;
+}
+.gen-select-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--color-primary, #6cb8ff);
+}
+.gen-select-actions {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+
+.gen-card-picked {
+  outline: 2px solid var(--color-primary, #6cb8ff);
+  outline-offset: 2px;
+}
+.gen-card-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.gen-card-check {
+  position: absolute;
+  top: 6px; left: 6px;
+  width: 28px; height: 28px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary, #6cb8ff);
+  font-size: 1rem;
+}
+
+/* ─── Generations: mobile-friendly select bar (sticky top, thumb hit areas) ─── */
+
+.gen-select-bar-sticky {
+  position: sticky;
+  top: var(--spacing-sm, 8px);
+  z-index: 20;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px 10px;
+  gap: 8px;
+}
+.gen-select-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.gen-select-cancel {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+.gen-select-action {
+  flex: 1 1 110px;
+  min-height: 44px;            /* iOS tap target */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+.gen-select-action span { white-space: nowrap; }
+
+/* ─── Generations: always-visible per-card action toolbar (no hover required) ─── */
+
+.gen-card-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+  padding: 3px;
+  /* Don't depend on :hover — visible always so it works on touch */
+}
+.gen-card-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.gen-card-action:hover { background: rgba(255, 255, 255, 0.18); }
+.gen-card-action-danger:hover { background: rgba(255, 90, 90, 0.85); }
+
+@media (max-width: 640px) {
+  .gen-card-action { width: 36px; height: 36px; font-size: 0.9rem; }
+  .gen-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .gen-detail-actions { gap: 8px; }
+  .gen-detail-actions .btn { flex: 1 1 calc(50% - 4px); min-height: 44px; }
+  /* Bottom-sheet modals on phones: dock the panel to the bottom and leave a
+     tap-away strip of backdrop above it (the old rule filled the whole
+     viewport, so there was nowhere to tap to dismiss). A grab handle + a
+     44px close button make it dismissable by swipe, tap-away, or button. */
+  .modal-backdrop { align-items: flex-end; }
+  .modal-content {
+    width: 100% !important;
+    max-width: 100vw;
+    max-height: 88vh;
+    border-radius: var(--radius-lg, 14px) var(--radius-lg, 14px) 0 0;
+  }
+  .modal-grabber { display: flex; }
+  .modal-close { width: 44px; height: 44px; font-size: 1.5rem; }
+  .modal-header { padding: 4px 14px 12px; }
+  .modal-body { padding-bottom: 24px; }
+  .gen-tab { min-height: 36px; }
+  .gen-detail-image, .gen-detail-video { max-height: 46vh; }
+}
+
+/* ─── RemixDialog ─── */
+
+.remix-dialog {
+  width: min(640px, 92vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.remix-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md, 16px);
+}
+.remix-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.remix-preview img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: #000;
+}
+.remix-preview-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #888);
+}
+
+.remix-mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.remix-mode-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px;
+  background: var(--color-bg, #111);
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: 8px;
+  color: var(--color-text-muted, #aaa);
+  cursor: pointer;
+  font-size: 0.85rem;
+  min-height: 80px;
+}
+.remix-mode-option small {
+  font-size: 0.7rem;
+  color: var(--color-text-muted, #888);
+  text-align: center;
+}
+.remix-mode-option:hover {
+  border-color: var(--color-primary, #6cb8ff);
+  color: var(--color-text, #e8e8e8);
+}
+.remix-mode-option-active {
+  background: rgba(108, 184, 255, 0.10);
+  border-color: var(--color-primary, #6cb8ff);
+  color: var(--color-primary, #6cb8ff);
+}
+.remix-mode-option-active small { color: var(--color-primary, #6cb8ff); }
+
+.remix-params {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm, 8px);
+}
+
+.remix-error {
+  padding: 8px 12px;
+  background: rgba(255, 90, 90, 0.10);
+  border: 1px solid rgba(255, 90, 90, 0.4);
+  border-radius: 6px;
+  color: #ff7a7a;
+  font-size: 0.85rem;
+}
+
+.remix-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border, #2a2a2a);
+  background: var(--color-bg, #111);
+  position: sticky;
+  bottom: 0;
+}
+.remix-actions .btn { flex: 1; min-height: 44px; }
+
+@media (max-width: 640px) {
+  .remix-mode-toggle { grid-template-columns: 1fr; }
+  .remix-params { grid-template-columns: 1fr 1fr; }
+  .remix-preview img { width: 72px; height: 72px; }
+}
+
+/* ─── Generations: full-width labeled action bar on mobile ─── */
+@media (max-width: 640px) {
+  .gen-card-actions {
+    position: static;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    display: flex;
+    border-top: 1px solid var(--color-border, #2a2a2a);
+  }
+  .gen-card-actions .gen-card-action {
+    flex: 1;
+    width: auto;
+    height: 44px;
+    border-radius: 0;
+    border-right: 1px solid var(--color-border, #2a2a2a);
+    font-size: 0.95rem;
+    color: var(--color-text, #e8e8e8);
+  }
+  .gen-card-actions .gen-card-action:last-child { border-right: none; }
+  .gen-card-actions .gen-card-action:hover {
+    background: rgba(108, 184, 255, 0.10);
+  }
+  .gen-card-actions .gen-card-action-danger:hover {
+    background: rgba(255, 90, 90, 0.18);
+  }
+  /* When card-actions becomes a bottom bar, make sure body padding stays tight */
+  .gen-card-body { padding-bottom: 4px; }
+}
+
+/* Always-on iOS auto-zoom defense for the new dialogs (in case the
+   1023px breakpoint rule misses anything I introduced). Applies only on
+   touch viewports per @supports. */
+@supports (-webkit-touch-callout: none) {
+  .image-picker input,
+  .image-picker textarea,
+  .image-picker select,
+  .image-picker .input,
+  .image-picker .textarea,
+  .remix-dialog input,
+  .remix-dialog textarea,
+  .remix-dialog select,
+  .remix-dialog .input,
+  .remix-dialog .textarea,
+  .remix-dialog .model-selector {
+    font-size: 16px;
+  }
+}
+
+/* ── Modal grab handle — a swipe-down dismiss affordance for the bottom-sheet
+   modals on touch devices. Hidden on desktop; shown via the 640px rule. ── */
+.modal-grabber {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0 2px;
+  flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+}
+.modal-grabber::before {
+  content: '';
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-border, #3a3a3a);
+}
+
+/* ── Multi-model picker — selected models as removable chips plus a searchable
+   "add a model" control. One prompt → one background job per selected model. */
+.multi-model { display: flex; flex-direction: column; gap: 8px; }
+.multi-model-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.multi-model-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 3px 4px 3px 10px;
+  background: rgba(108, 184, 255, 0.12);
+  border: 1px solid var(--color-primary, #6cb8ff);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  color: var(--color-primary, #6cb8ff);
+  font-family: 'JetBrains Mono', monospace;
+}
+.multi-model-chip-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.multi-model-chip-x {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.multi-model-chip-x:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.multi-model-hint { font-size: 0.72rem; color: var(--color-text-muted, #888); }
+
+/* ── Studio "Queue" tab — full-panel view of background media-generation jobs
+   (replaces the floating JobsDock). Reuses the badge/progress item styles. ── */
+.jobs-queue { padding: var(--spacing-xl); max-width: 1100px; margin: 0 auto; width: 100%; }
+.jobs-queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+}
+.jobs-queue-title { display: flex; align-items: center; gap: 10px; font-size: 1.05rem; font-weight: 600; }
+.jobs-queue-title .jobs-queue-count {
+  font-size: 0.72rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(108, 184, 255, 0.15);
+  color: var(--color-primary, #6cb8ff);
+}
+.jobs-queue-toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+.jobs-queue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: var(--spacing-md, 16px);
+}
+.jobs-queue-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+.jobs-queue-thumb {
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted, #888);
+  font-size: 1.2rem;
+}
+.jobs-queue-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.jobs-queue-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.jobs-queue-row { display: flex; align-items: center; gap: 8px; }
+.jobs-queue-model {
+  flex: 1;
+  min-width: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-primary);
+}
+.jobs-queue-prompt {
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #888);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.jobs-queue-actions { display: flex; gap: 6px; margin-top: auto; padding-top: 2px; flex-wrap: wrap; }
+.jobs-queue-empty { text-align: center; color: var(--color-text-muted, #888); padding: 64px 20px; }
+.jobs-queue-empty i { display: block; font-size: 2.6rem; opacity: 0.35; margin-bottom: 14px; }
+
+/* ── ImageGen batch preview — status line while a multi-image / multi-model
+   batch runs, plus a grid that fills in as each job completes. ── */
+.media-result-stack { width: 100%; display: flex; flex-direction: column; gap: var(--spacing-md); align-items: stretch; }
+.media-batch-status { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.85rem; color: var(--color-text-secondary); }
+
+/* ─── Actions Playground + Agent Groups wizard ─────────────────────────── */
+
+.section-box {
+  background: var(--color-bg-elevated, #1a1a1a);
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--spacing-md, 16px);
+  margin-bottom: var(--spacing-md, 16px);
+}
+.section-title {
+  margin: 0 0 var(--spacing-sm, 8px);
+  font-size: 1rem;
+  color: var(--color-text, #e8e8e8);
+}
+.section-hint {
+  color: var(--color-text-muted, #888);
+  font-size: 0.85rem;
+  margin: 0 0 var(--spacing-md, 16px);
+}
+
+.form-field-defs { display: flex; flex-direction: column; gap: var(--spacing-sm, 8px); }
+
+.actions-playground { display: flex; flex-direction: column; gap: 0; }
+.actions-playground-submit {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--spacing-md, 16px);
+}
+.actions-playground-result {
+  background: var(--color-bg, #111);
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 0.82rem;
+  max-height: 480px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text, #e8e8e8);
+}
+
+/* Group create wizard */
+
+.group-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--spacing-md, 16px);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.group-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted, #888);
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, #2a2a2a);
+}
+.group-step-active {
+  color: var(--color-primary, #6cb8ff);
+  border-color: var(--color-primary, #6cb8ff);
+  background: rgba(108, 184, 255, 0.10);
+}
+.group-step-done {
+  color: var(--color-success, #6dd47d);
+  border-color: var(--color-success, #6dd47d);
+}
+.group-step-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-bg, #111);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.group-step-active .group-step-dot {
+  background: var(--color-primary, #6cb8ff);
+  color: var(--color-bg, #111);
+}
+.group-step-done .group-step-dot {
+  background: var(--color-success, #6dd47d);
+  color: var(--color-bg, #111);
+}
+.group-step-body { animation: gs-fade-in 0.2s ease-out; }
+@keyframes gs-fade-in { from { opacity: 0 } to { opacity: 1 } }
+
+.group-step-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: var(--spacing-md, 16px);
+}
+
+.group-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--spacing-sm, 8px);
+  cursor: pointer;
+  color: var(--color-text-muted, #aaa);
+  font-size: 0.85rem;
+}
+.group-profiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.group-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  background: var(--color-bg, #111);
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  position: relative;
+  color: var(--color-text, #e8e8e8);
+}
+.group-profile:hover { border-color: var(--color-primary, #6cb8ff); }
+.group-profile-picked {
+  border-color: var(--color-primary, #6cb8ff);
+  background: rgba(108, 184, 255, 0.08);
+}
+.group-profile h3 { margin: 0; font-size: 0.95rem; color: var(--color-primary, #6cb8ff); }
+.group-profile-desc { font-size: 0.82rem; color: var(--color-text-muted, #aaa); margin: 0; }
+.group-profile-prompt {
+  background: var(--color-bg-elevated, #1a1a1a);
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: 4px;
+  padding: 8px;
+  margin: 0;
+  font-size: 0.72rem;
+  max-height: 100px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  color: var(--color-text, #e8e8e8);
+}
+.group-profile-pick {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: var(--color-primary, #6cb8ff);
+}
+
+.group-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.group-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, #2a2a2a);
+  background: transparent;
+  color: var(--color-text-muted, #aaa);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.group-chip:hover { border-color: var(--color-primary, #6cb8ff); color: var(--color-text, #e8e8e8); }
+.group-chip-on {
+  background: rgba(108, 184, 255, 0.15);
+  border-color: var(--color-primary, #6cb8ff);
+  color: var(--color-primary, #6cb8ff);
+}
+
+@media (max-width: 640px) {
+  .group-profiles { grid-template-columns: 1fr; }
+  .group-step-actions .btn { flex: 1; min-height: 44px; }
 }

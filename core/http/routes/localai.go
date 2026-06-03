@@ -2,15 +2,15 @@ package routes
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/application"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/http/endpoints/localai"
-	"github.com/mudler/LocalAI/core/http/middleware"
-	"github.com/mudler/LocalAI/core/schema"
-	"github.com/mudler/LocalAI/core/services"
-	"github.com/mudler/LocalAI/core/templates"
-	"github.com/mudler/LocalAI/internal"
-	"github.com/mudler/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/core/application"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/http/endpoints/localai"
+	"github.com/P3X-118/LocalAI/core/http/middleware"
+	"github.com/P3X-118/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/services"
+	"github.com/P3X-118/LocalAI/core/templates"
+	"github.com/P3X-118/LocalAI/internal"
+	"github.com/P3X-118/LocalAI/pkg/model"
 	echoswagger "github.com/swaggo/echo-swagger"
 )
 
@@ -112,6 +112,23 @@ func RegisterLocalAIRoutes(router *echo.Echo,
 		videoHandler,
 		requestExtractor.BuildFilteredFirstAvailableDefaultModel(config.BuildUsecaseFilterFn(config.FLAG_VIDEO)),
 		requestExtractor.SetModelAndConfig(func() schema.LocalAIRequest { return new(schema.VideoRequest) }))
+
+	// Generated-media history (persistent sidecar metadata) — see
+	// core/services/media_history.go. Every sync image/video/audio handler
+	// writes a <output>.json next to its artifact; these endpoints read them.
+	router.GET("/api/generations", localai.ListGenerationsEndpoint(app))
+	router.GET("/api/generations/:id", localai.GetGenerationEndpoint(app))
+	router.DELETE("/api/generations/:id", localai.DeleteGenerationEndpoint(app))
+
+	// Async media-generation jobs — POST a sync request body to
+	// /api/generations/jobs/<type> (image|video|tts|sound) and get back a
+	// job record that workers fulfil via loopback. Subscribe to SSE for live
+	// progress, or poll GET. See core/services/media_jobs.go.
+	router.POST("/api/generations/jobs/:type", localai.EnqueueMediaJobEndpoint(app))
+	router.GET("/api/generations/jobs", localai.ListMediaJobsEndpoint(app))
+	router.GET("/api/generations/jobs/:id", localai.GetMediaJobEndpoint(app))
+	router.GET("/api/generations/jobs/:id/sse", localai.SSEMediaJobEndpoint(app))
+	router.DELETE("/api/generations/jobs/:id", localai.CancelMediaJobEndpoint(app))
 
 	// Backend Statistics Module
 	// TODO: Should these use standard middlewares? Refactor later, they are extremely simple.

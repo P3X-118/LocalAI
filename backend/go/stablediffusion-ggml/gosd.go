@@ -8,9 +8,9 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/mudler/LocalAI/pkg/grpc/base"
-	pb "github.com/mudler/LocalAI/pkg/grpc/proto"
-	"github.com/mudler/LocalAI/pkg/utils"
+	"github.com/P3X-118/LocalAI/pkg/grpc/base"
+	pb "github.com/P3X-118/LocalAI/pkg/grpc/proto"
+	"github.com/P3X-118/LocalAI/pkg/utils"
 )
 
 type SDGGML struct {
@@ -133,8 +133,12 @@ func (sd *SDGGML) GenerateImage(opts *pb.GenerateImageRequest) error {
 		keepAlive = append(keepAlive, bytep)
 	}
 
-	// Default strength for img2img (0.75 is a good default)
-	strength := float32(0.75)
+	// img2img denoising strength from the request; 0 (unset) falls back to the
+	// 0.75 default. Only takes effect when a source image is present.
+	strength := opts.Strength
+	if strength == 0 {
+		strength = 0.75
+	}
 
 	// free'd by GenImage
 	p := ImgGenParamsNew()

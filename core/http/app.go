@@ -14,14 +14,14 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/mudler/LocalAI/core/http/auth"
-	"github.com/mudler/LocalAI/core/http/endpoints/localai"
-	httpMiddleware "github.com/mudler/LocalAI/core/http/middleware"
-	"github.com/mudler/LocalAI/core/http/routes"
+	"github.com/P3X-118/LocalAI/core/http/auth"
+	"github.com/P3X-118/LocalAI/core/http/endpoints/localai"
+	httpMiddleware "github.com/P3X-118/LocalAI/core/http/middleware"
+	"github.com/P3X-118/LocalAI/core/http/routes"
 
-	"github.com/mudler/LocalAI/core/application"
-	"github.com/mudler/LocalAI/core/schema"
-	"github.com/mudler/LocalAI/core/services"
+	"github.com/P3X-118/LocalAI/core/application"
+	"github.com/P3X-118/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/services"
 
 	"github.com/mudler/xlog"
 )
@@ -344,6 +344,14 @@ func API(application *application.Application) (*echo.Echo, error) {
 					baseTag := `<base href="` + baseURL + `" />`
 					indexHTML = []byte(strings.Replace(string(indexHTML), "<head>", "<head>\n  "+baseTag, 1))
 				}
+				// The HTML references content-hashed JS/CSS bundles, so the HTML
+				// itself must never be cached — otherwise a refreshed browser
+				// loads new bundle names but old JS, breaking deploys. The
+				// fingerprinted assets under /assets/ are inherently
+				// immutable-by-name and can be cached long-term separately.
+				c.Response().Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+				c.Response().Header().Set("Pragma", "no-cache")
+				c.Response().Header().Set("Expires", "0")
 				return c.HTMLBlob(http.StatusOK, indexHTML)
 			}
 

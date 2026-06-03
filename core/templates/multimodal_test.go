@@ -1,7 +1,7 @@
 package templates_test
 
 import (
-	. "github.com/mudler/LocalAI/core/templates" // Update with your module path
+	. "github.com/P3X-118/LocalAI/core/templates" // Update with your module path
 
 	// Update with your module path
 	. "github.com/onsi/ginkgo/v2"

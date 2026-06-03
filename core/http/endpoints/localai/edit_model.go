@@ -8,11 +8,11 @@ import (
 	"os"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/config"
-	httpUtils "github.com/mudler/LocalAI/core/http/middleware"
-	"github.com/mudler/LocalAI/internal"
-	"github.com/mudler/LocalAI/pkg/model"
-	"github.com/mudler/LocalAI/pkg/utils"
+	"github.com/P3X-118/LocalAI/core/config"
+	httpUtils "github.com/P3X-118/LocalAI/core/http/middleware"
+	"github.com/P3X-118/LocalAI/internal"
+	"github.com/P3X-118/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/pkg/utils"
 
 	"gopkg.in/yaml.v3"
 )

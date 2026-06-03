@@ -67,7 +67,7 @@ Feel free to open up a Pull request (by clicking at the "Edit page" below) to ge
 
 - [Discord bot](https://github.com/mudler/LocalAGI/tree/main/examples/discord)
 - [Slack bot](https://github.com/mudler/LocalAGI/tree/main/examples/slack)
-- [Telegram bot](https://github.com/mudler/LocalAI/tree/master/examples/telegram-bot)
+- [Telegram bot](https://github.com/P3X-118/LocalAI/tree/master/examples/telegram-bot)
 - [Hellper (Telegram)](https://github.com/JackBekket/Hellper)
 
 ### Home Automation
@@ -93,7 +93,7 @@ Feel free to open up a Pull request (by clicking at the "Edit page" below) to ge
 - [spark](https://github.com/cedriking/spark)
 - [openops (Mattermost)](https://github.com/mattermost/openops)
 - [Model Gallery](https://github.com/go-skynet/model-gallery)
-- [Examples](https://github.com/mudler/LocalAI/tree/master/examples/)
+- [Examples](https://github.com/P3X-118/LocalAI/tree/master/examples/)
 
 ## Configuration Guides
 

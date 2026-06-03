@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/explorer"
-	"github.com/mudler/LocalAI/core/http/middleware"
-	"github.com/mudler/LocalAI/internal"
+	"github.com/P3X-118/LocalAI/core/explorer"
+	"github.com/P3X-118/LocalAI/core/http/middleware"
+	"github.com/P3X-118/LocalAI/internal"
 )
 
 func Dashboard() echo.HandlerFunc {

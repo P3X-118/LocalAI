@@ -16,11 +16,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/mudler/xlog"
 
-	"github.com/mudler/LocalAI/core/backend"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/http/middleware"
-	"github.com/mudler/LocalAI/core/schema"
-	model "github.com/mudler/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/core/backend"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/http/middleware"
+	"github.com/P3X-118/LocalAI/core/schema"
+	model "github.com/P3X-118/LocalAI/pkg/model"
 )
 
 // InpaintingEndpoint handles POST /v1/images/inpainting
@@ -231,7 +231,8 @@ func InpaintingEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, app
 		// Note: ImageGenerationFunc will call into the loaded model's GenerateImage which expects src JSON
 		// Also pass ref images (orig + mask) so backends that support ref images can use them.
 		refImages := []string{origRef, maskRef}
-		fn, err := backend.ImageGenerationFunc(height, width, steps, 0, prompt, "", jsonPath, dst, ml, *cfg, appConfig, refImages)
+		// strength 0 → backend default (0.75), matching prior inpainting behavior.
+		fn, err := backend.ImageGenerationFunc(height, width, steps, 0, 0, prompt, "", jsonPath, dst, ml, *cfg, appConfig, refImages)
 		if err != nil {
 			return err
 		}

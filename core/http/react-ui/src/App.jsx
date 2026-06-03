@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import OperationsBar from './components/OperationsBar'
 import { ToastContainer, useToast } from './components/Toast'
+import { MediaJobsProvider } from './hooks/useMediaJobs'
 import { systemApi } from './utils/api'
 
 const COLLAPSED_KEY = 'localai_sidebar_collapsed'
@@ -41,6 +42,7 @@ export default function App() {
   ].filter(Boolean).join(' ')
 
   return (
+    <MediaJobsProvider>
     <div className={layoutClasses}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="main-content">
@@ -69,18 +71,15 @@ export default function App() {
                 </span>
               )}
               <div className="app-footer-links">
-                <a href="https://github.com/mudler/LocalAI" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/P3X-118/LocalAI" target="_blank" rel="noopener noreferrer">
                   <i className="fab fa-github" /> GitHub
                 </a>
                 <a href="https://localai.io" target="_blank" rel="noopener noreferrer">
                   <i className="fas fa-book" /> Documentation
                 </a>
-                <a href="https://mudler.pm" target="_blank" rel="noopener noreferrer">
-                  <i className="fas fa-user" /> Author
-                </a>
               </div>
               <span className="app-footer-copyright">
-                &copy; 2023-2026 <a href="https://mudler.pm" target="_blank" rel="noopener noreferrer">Ettore Di Giacinto</a>
+                SGC fork &middot; based on <a href="https://github.com/mudler/LocalAI" target="_blank" rel="noopener noreferrer">LocalAI</a> by Ettore Di Giacinto
               </span>
             </div>
           </footer>
@@ -88,5 +87,6 @@ export default function App() {
       </main>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
+    </MediaJobsProvider>
   )
 }

@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/application"
+	"github.com/P3X-118/LocalAI/core/application"
 	coreTypes "github.com/mudler/LocalAGI/core/types"
 	"github.com/mudler/xlog"
 	"github.com/sashabaranov/go-openai"
@@ -50,8 +50,11 @@ func AgentResponsesInterceptor(app *application.Application) echo.MiddlewareFunc
 				return next(c)
 			}
 
-			// Check if this model name is an agent
-			ag := svc.GetAgent(req.Model)
+			// Check if this model name is an agent (scoped to caller's user ID;
+			// agents are stored under "userID:name" keys so a bare GetAgent
+			// would never match agents created via the authenticated API).
+			userID := effectiveUserID(c)
+			ag := svc.GetAgentForUser(userID, req.Model)
 			if ag == nil {
 				return next(c)
 			}

@@ -15,13 +15,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/core/http/middleware"
-	"github.com/mudler/LocalAI/core/schema"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/core/http/middleware"
+	"github.com/P3X-118/LocalAI/core/schema"
 
-	"github.com/mudler/LocalAI/core/backend"
+	"github.com/P3X-118/LocalAI/core/backend"
+	"github.com/P3X-118/LocalAI/core/services"
 
-	model "github.com/mudler/LocalAI/pkg/model"
+	model "github.com/P3X-118/LocalAI/pkg/model"
 	"github.com/mudler/xlog"
 )
 
@@ -67,6 +68,7 @@ func downloadFile(url string) (string, error) {
 // @Router /video [post]
 func VideoEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfig *config.ApplicationConfig) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		handlerStartedAt := time.Now()
 		input, ok := c.Get(middleware.CONTEXT_LOCALS_KEY_LOCALAI_REQUEST).(*schema.VideoRequest)
 		if !ok || input.Model == "" {
 			xlog.Error("Video Endpoint - Invalid Input")
@@ -215,6 +217,32 @@ func VideoEndpoint(cl *config.ModelConfigLoader, ml *model.ModelLoader, appConfi
 			item.URL, err = url.JoinPath(baseURL, "generated-videos", base)
 			if err != nil {
 				return err
+			}
+
+			// Persistent history sidecar — see openai/image.go for the rationale.
+			if err := services.NewMediaHistory(appConfig).Write(&schema.MediaArtifact{
+				UserID:         services.RequestUserID(c),
+				Type:           schema.MediaVideo,
+				Model:          input.Model,
+				Prompt:         input.Prompt,
+				NegativePrompt: input.NegativePrompt,
+				Params: map[string]any{
+					"width":      width,
+					"height":     height,
+					"num_frames": input.NumFrames,
+					"fps":        input.FPS,
+					"seed":       input.Seed,
+					"cfg_scale":  input.CFGScale,
+					"step":       input.Step,
+				},
+				CreatedAt:  time.Now().UTC(),
+				DurationMs: time.Since(handlerStartedAt).Milliseconds(),
+				OutputPath: output,
+				OutputURL:  item.URL,
+				RequestID:  c.Response().Header().Get(echo.HeaderXRequestID),
+				JobID:      c.Request().Header.Get("X-LocalAI-Job-ID"),
+			}); err != nil {
+				xlog.Warn("media history sidecar write failed", "err", err, "path", output)
 			}
 		}
 

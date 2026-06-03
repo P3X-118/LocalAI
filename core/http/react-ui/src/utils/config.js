@@ -23,6 +23,8 @@ export const API_CONFIG = {
 
     // Resources
     resources: '/api/resources',
+    // Lightweight live GPU/memory stats (non-admin, cheap to poll)
+    gpu: '/api/gpu',
 
     // Settings
     settings: '/api/settings',
@@ -52,6 +54,25 @@ export const API_CONFIG = {
     agentJob: (id) => `/api/agent/jobs/${id}`,
     cancelAgentJob: (id) => `/api/agent/jobs/${id}/cancel`,
     executeAgentJob: '/api/agent/jobs/execute',
+
+    // Agent actions playground & group create (ports of upstream LocalAGI
+    // webui pages; backed by /api/agents/* in our binary).
+    agentActions: '/api/agents/actions',
+    agentActionDefinition: (name) => `/api/agents/actions/${encodeURIComponent(name)}/definition`,
+    agentActionRun: (name) => `/api/agents/actions/${encodeURIComponent(name)}/run`,
+    agentConfigMetadata: '/api/agents/config/metadata',
+    agentGroupGenerateProfiles: '/api/agents/group/generateProfiles',
+    agentGroupCreate: '/api/agents/group/create',
+
+    // Generated-media history (persistent sidecar metadata for every image /
+    // video / audio produced by the sync OpenAI handlers).
+    generations: '/api/generations',
+    generation: (id) => `/api/generations/${id}`,
+    // Async media-generation jobs (POST a sync body, get back a job record)
+    enqueueMediaJob: (type) => `/api/generations/jobs/${type}`,
+    mediaJobs: '/api/generations/jobs',
+    mediaJob: (id) => `/api/generations/jobs/${id}`,
+    mediaJobSSE: (id) => `/api/generations/jobs/${id}/sse`,
 
     // OpenAI-compatible endpoints
     chatCompletions: '/v1/chat/completions',

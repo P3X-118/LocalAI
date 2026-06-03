@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mudler/LocalAI/internal"
+	"github.com/P3X-118/LocalAI/internal"
 )
 
 // Release represents a LocalAI release

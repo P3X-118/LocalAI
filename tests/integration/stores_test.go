@@ -10,11 +10,11 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/mudler/xlog"
 
-	"github.com/mudler/LocalAI/core/config"
-	"github.com/mudler/LocalAI/pkg/grpc"
-	"github.com/mudler/LocalAI/pkg/model"
-	"github.com/mudler/LocalAI/pkg/store"
-	"github.com/mudler/LocalAI/pkg/system"
+	"github.com/P3X-118/LocalAI/core/config"
+	"github.com/P3X-118/LocalAI/pkg/grpc"
+	"github.com/P3X-118/LocalAI/pkg/model"
+	"github.com/P3X-118/LocalAI/pkg/store"
+	"github.com/P3X-118/LocalAI/pkg/system"
 )
 
 func normalize(vecs [][]float32) {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	. "github.com/mudler/LocalAI/pkg/concurrency"
+	. "github.com/P3X-118/LocalAI/pkg/concurrency"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

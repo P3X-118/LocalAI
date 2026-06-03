@@ -764,7 +764,7 @@
   mirrors:
     - localai/localai-backends:latest-cpu-local-store
   urls:
-    - https://github.com/mudler/LocalAI
+    - https://github.com/P3X-118/LocalAI
   description: |
     Local Store is a local-first, self-hosted, and open-source vector database.
   tags:
