@@ -641,7 +641,7 @@ func (c *ModelConfig) GuessUsecases(u ModelConfigUsecase) bool {
 		}
 	}
 	if (u & FLAG_IMAGE) == FLAG_IMAGE {
-		imageBackends := []string{"diffusers", "stablediffusion", "stablediffusion-ggml"}
+		imageBackends := []string{"diffusers", "stablediffusion", "stablediffusion-ggml", "comfy", "comfyui"}
 		if !slices.Contains(imageBackends, c.Backend) {
 			return false
 		}
