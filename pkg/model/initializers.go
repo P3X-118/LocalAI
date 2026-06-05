@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -181,6 +182,16 @@ func (ml *ModelLoader) backendLoader(opts ...Option) (client grpc.Backend, err e
 	return model.GRPC(o.parallelRequests, ml.wd), nil
 }
 
+// sharedSingletonBackend lists backend names where one gRPC instance hosts
+// many model configs. For these, backendLoader must re-call LoadModel on
+// every request to keep the backend's active model in sync with the
+// per-request modelID. Extend this map when adding new sidecar backends
+// that multiplex models on a fixed gRPC endpoint.
+var sharedSingletonBackend = map[string]bool{
+	"comfy":   true,
+	"comfyui": true,
+}
+
 // enforceLRULimit enforces the LRU limit before loading a new model.
 // This is called before loading a model to ensure we don't exceed the limit.
 // It accounts for models that are currently being loaded by other goroutines.
@@ -244,7 +255,33 @@ func (ml *ModelLoader) Load(opts ...Option) (grpc.Backend, error) {
 		xlog.Debug("Model already loaded", "model", o.modelID)
 		// Update last used time for LRU tracking
 		ml.updateModelLastUsed(m)
-		return m.GRPC(o.parallelRequests, ml.wd), nil
+		client := m.GRPC(o.parallelRequests, ml.wd)
+
+		// Shared-singleton backends (e.g. our comfy sidecar serves every image
+		// yaml from one ComfyUI process) cannot trust the per-modelID cache:
+		// the cached client always points at the same gRPC endpoint, but the
+		// underlying server only tracks the most recently LoadModel'd
+		// checkpoint. Without this sync, a request for flux-schnell can land
+		// on a backend currently loaded with sdxl-lightning and silently
+		// generate with the wrong weights. The shim's LoadModel is idempotent
+		// and only triggers ComfyUI eviction when ckpt/arch actually change.
+		if sharedSingletonBackend[strings.ToLower(o.backendString)] {
+			syncOpts := *o.gRPCOptions
+			syncOpts.Model = o.model
+			syncOpts.ModelFile = filepath.Join(ml.ModelPath, o.model)
+			syncOpts.ModelPath = ml.ModelPath
+			res, syncErr := client.LoadModel(o.context, &syncOpts)
+			if syncErr != nil {
+				xlog.Error("shared-singleton re-LoadModel failed", "backend", o.backendString, "modelID", o.modelID, "error", syncErr)
+				return nil, fmt.Errorf("shared-singleton LoadModel sync failed for %s on %s: %w", o.modelID, o.backendString, syncErr)
+			}
+			if res != nil && !res.Success {
+				xlog.Error("shared-singleton re-LoadModel rejected", "backend", o.backendString, "modelID", o.modelID, "message", res.Message)
+				return nil, fmt.Errorf("shared-singleton LoadModel sync rejected for %s on %s: %s", o.modelID, o.backendString, res.Message)
+			}
+		}
+
+		return client, nil
 	}
 
 	// Enforce LRU limit before loading a new model
