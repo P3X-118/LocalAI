@@ -40,7 +40,10 @@ export default function VideoGen() {
     if (!activeJob || activeJob.status !== 'completed' || !activeJob.artifact_id) return
     let cancelled = false
     generationsApi.get(activeJob.artifact_id).then(a => {
-      if (!cancelled && a?.output_url) setVideos([{ url: a.output_url }])
+      if (!cancelled && a?.output_url) {
+        const u = a.output_url.replace(/^https?:\/\/[^/]+/, '') || a.output_url
+        setVideos([{ url: u }])
+      }
     }).catch(() => {})
     return () => { cancelled = true }
   }, [activeJob?.status, activeJob?.artifact_id])

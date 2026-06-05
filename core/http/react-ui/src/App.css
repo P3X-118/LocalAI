@@ -2760,6 +2760,18 @@
 }
 
 /* Two-column layout for media generation pages */
+.form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+@media (max-width: 540px) {
+  .form-row-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
 .media-layout {
   display: grid;
   grid-template-columns: minmax(320px, 400px) 1fr;

@@ -72,7 +72,10 @@ export default function ImageGen() {
     batchJobs.forEach(j => {
       if (j.status === 'completed' && j.artifact_id && !batchImages[j.id]) {
         generationsApi.get(j.artifact_id).then(a => {
-          if (a?.output_url) setBatchImages(prev => ({ ...prev, [j.id]: { url: a.output_url } }))
+          if (a?.output_url) {
+            const u = a.output_url.replace(/^https?:\/\/[^/]+/, '') || a.output_url
+            setBatchImages(prev => ({ ...prev, [j.id]: { url: u } }))
+          }
         }).catch(() => {})
       }
     })
@@ -170,7 +173,7 @@ export default function ImageGen() {
             <textarea className="textarea" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="What to avoid..." rows={2} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+          <div className="form-row-2col">
             <div className="form-group">
               <label className="form-label">Size</label>
               <select className="model-selector" value={size} onChange={(e) => setSize(e.target.value)} style={{ width: '100%' }}>
@@ -190,11 +193,11 @@ export default function ImageGen() {
           </div>
           {showAdvanced && (
             <div style={{ marginBottom: 'var(--spacing-md)' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+              <div className="form-row-2col">
                 <div className="form-group"><label className="form-label">Steps</label><input className="input" type="number" value={steps} onFocus={(e) => e.target.select()} onChange={(e) => setSteps(e.target.value)} placeholder="20" /></div>
                 <div className="form-group"><label className="form-label">Seed</label><input className="input" type="number" value={seed} onFocus={(e) => e.target.select()} onChange={(e) => setSeed(e.target.value)} placeholder="Random" /></div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+              <div className="form-row-2col">
                 <div className="form-group">
                   <label className="form-label">CFG Scale <span style={{ color: 'var(--color-text-muted)', fontWeight: 400, fontSize: '0.7rem' }}>1–20</span></label>
                   <input className="input" type="number" step="0.5" min="1" max="20" value={cfgScale} onFocus={(e) => e.target.select()} onChange={(e) => setCfgScale(e.target.value)} placeholder="7" />
@@ -204,7 +207,7 @@ export default function ImageGen() {
                   <input className="input" type="number" min="0" max="12" value={clipSkip} onFocus={(e) => e.target.select()} onChange={(e) => setClipSkip(e.target.value)} placeholder="0" />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+              <div className="form-row-2col">
                 <div className="form-group">
                   <label className="form-label">Sampler</label>
                   <select className="model-selector" value={sampler} onChange={(e) => setSampler(e.target.value)} style={{ width: '100%' }}>
@@ -227,7 +230,7 @@ export default function ImageGen() {
                 </label>
               </div>
               {hiresFix && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+                <div className="form-row-2col">
                   <div className="form-group">
                     <label className="form-label">Upscale</label>
                     <input className="input" type="number" step="0.1" min="1.0" max="4.0" value={hiresUpscale} onFocus={(e) => e.target.select()} onChange={(e) => setHiresUpscale(e.target.value)} placeholder="1.5" />
