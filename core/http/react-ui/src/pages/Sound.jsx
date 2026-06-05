@@ -5,6 +5,7 @@ import { CAP_SOUND_GENERATION } from '../utils/capabilities'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
 import GpuGauge from '../components/GpuGauge'
+import CopyButton from '../components/CopyButton'
 import { generationsApi } from '../utils/api'
 import { useMediaJobs } from '../hooks/useMediaJobs'
 import { usePersistedState } from '../hooks/usePersistedState'
@@ -112,7 +113,10 @@ export default function Sound() {
           {mode === 'simple' ? (
             <>
               <div className="form-group">
-                <label className="form-label">Description</label>
+                <div className="form-label-row">
+                  <label className="form-label">Description</label>
+                  <CopyButton text={text} title="Copy description" />
+                </div>
                 <textarea className="textarea" value={text} onChange={(e) => setText(e.target.value)} placeholder="Describe the sound..." rows={3} />
               </div>
               <div style={{ display: 'flex', gap: 'var(--spacing-md)', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
@@ -127,14 +131,20 @@ export default function Sound() {
           ) : (
             <>
               <div className="form-group">
-                <label className="form-label">Caption</label>
+                <div className="form-label-row">
+                  <label className="form-label">Caption</label>
+                  <CopyButton text={caption} title="Copy caption" />
+                </div>
                 <textarea className="textarea" value={caption} onChange={(e) => setCaption(e.target.value)} rows={2} />
               </div>
               <div className="form-group">
-                <label className="form-label">Lyrics</label>
+                <div className="form-label-row">
+                  <label className="form-label">Lyrics</label>
+                  <CopyButton text={lyrics} title="Copy lyrics" />
+                </div>
                 <textarea className="textarea" value={lyrics} onChange={(e) => setLyrics(e.target.value)} rows={3} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+              <div className="form-row-2col">
                 <div className="form-group"><label className="form-label">BPM</label><input className="input" type="number" value={bpm} onChange={(e) => setBpm(e.target.value)} /></div>
                 <div className="form-group"><label className="form-label">Duration (s)</label><input className="input" type="number" step="0.1" value={duration} onChange={(e) => setDuration(e.target.value)} /></div>
                 <div className="form-group"><label className="form-label">Key/Scale</label><input className="input" value={keyscale} onChange={(e) => setKeyscale(e.target.value)} /></div>

@@ -5,6 +5,7 @@ import { CAP_VIDEO } from '../utils/capabilities'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
 import GpuGauge from '../components/GpuGauge'
+import CopyButton from '../components/CopyButton'
 import { fileToBase64, generationsApi } from '../utils/api'
 import { useMediaJobs } from '../hooks/useMediaJobs'
 import { usePersistedState } from '../hooks/usePersistedState'
@@ -98,15 +99,21 @@ export default function VideoGen() {
             <ModelSelector value={model} onChange={setModel} capability={CAP_VIDEO} />
           </div>
           <div className="form-group">
-            <label className="form-label">Prompt</label>
+            <div className="form-label-row">
+              <label className="form-label">Prompt</label>
+              <CopyButton text={prompt} title="Copy prompt" />
+            </div>
             <textarea className="textarea" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe the video..." rows={3} />
           </div>
           <div className="form-group">
-            <label className="form-label">Negative Prompt</label>
+            <div className="form-label-row">
+              <label className="form-label">Negative Prompt</label>
+              <CopyButton text={negativePrompt} title="Copy negative prompt" />
+            </div>
             <textarea className="textarea" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} rows={2} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--spacing-sm)' }}>
+          <div className="form-row-3col">
             <div className="form-group">
               <label className="form-label">Size</label>
               <select className="model-selector" value={size} onChange={(e) => setSize(e.target.value)} style={{ width: '100%' }}>
@@ -127,7 +134,7 @@ export default function VideoGen() {
             <i className="fas fa-chevron-right" /> Advanced
           </div>
           {showAdvanced && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)' }}>
+            <div className="form-row-3col" style={{ marginBottom: 'var(--spacing-md)' }}>
               <div className="form-group"><label className="form-label">Steps</label><input className="input" type="number" value={steps} onChange={(e) => setSteps(e.target.value)} /></div>
               <div className="form-group"><label className="form-label">Seed</label><input className="input" type="number" value={seed} onChange={(e) => setSeed(e.target.value)} /></div>
               <div className="form-group"><label className="form-label">CFG Scale</label><input className="input" type="number" step="0.1" value={cfgScale} onChange={(e) => setCfgScale(e.target.value)} /></div>

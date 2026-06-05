@@ -5,6 +5,7 @@ import { CAP_TTS } from '../utils/capabilities'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
 import GpuGauge from '../components/GpuGauge'
+import CopyButton from '../components/CopyButton'
 import { generationsApi } from '../utils/api'
 import { useMediaJobs } from '../hooks/useMediaJobs'
 import { usePersistedState } from '../hooks/usePersistedState'
@@ -72,7 +73,10 @@ export default function TTS() {
             <ModelSelector value={model} onChange={setModel} capability={CAP_TTS} />
           </div>
           <div className="form-group">
-            <label className="form-label">Text</label>
+            <div className="form-label-row">
+              <label className="form-label">Text</label>
+              <CopyButton text={text} title="Copy text" />
+            </div>
             <textarea
               className="textarea"
               value={text}

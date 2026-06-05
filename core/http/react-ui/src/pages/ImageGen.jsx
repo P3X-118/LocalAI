@@ -6,6 +6,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorWithTraceLink from '../components/ErrorWithTraceLink'
 import GpuGauge from '../components/GpuGauge'
 import ImagePicker from '../components/ImagePicker'
+import CopyButton from '../components/CopyButton'
 import { generationsApi } from '../utils/api'
 import { useMediaJobs } from '../hooks/useMediaJobs'
 import { usePersistedState } from '../hooks/usePersistedState'
@@ -165,11 +166,17 @@ export default function ImageGen() {
             <MultiModelSelector value={models} onChange={setModels} capability={CAP_IMAGE} />
           </div>
           <div className="form-group">
-            <label className="form-label">Prompt</label>
+            <div className="form-label-row">
+              <label className="form-label">Prompt</label>
+              <CopyButton text={prompt} title="Copy prompt" />
+            </div>
             <textarea className="textarea" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe the image you want to generate..." rows={3} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate(e) } }} />
           </div>
           <div className="form-group">
-            <label className="form-label">Negative Prompt</label>
+            <div className="form-label-row">
+              <label className="form-label">Negative Prompt</label>
+              <CopyButton text={negativePrompt} title="Copy negative prompt" />
+            </div>
             <textarea className="textarea" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="What to avoid..." rows={2} />
           </div>
 
