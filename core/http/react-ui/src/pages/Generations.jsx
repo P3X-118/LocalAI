@@ -5,6 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import ConfirmDialog from '../components/ConfirmDialog'
 import RemixDialog from '../components/RemixDialog'
 import { useSwipeDismiss } from '../hooks/useSwipeDismiss'
+import { useMediaJobs, MEDIA_JOB_TERMINAL_STATUSES } from '../hooks/useMediaJobs'
 
 const TABS = [
   { key: '',            label: 'All',    icon: 'fa-th' },
@@ -69,6 +70,15 @@ export default function Generations() {
   const [selected, setSelected] = useState({}) // {id: item}
   const [remixItem, setRemixItem] = useState(null)
   const detailSwipe = useSwipeDismiss(() => setDetailItem(null))
+
+  // Live queue — surface still-running jobs above the historical grid.
+  // Terminal jobs are dropped from the strip because their artifacts are
+  // already in the grid below.
+  const { jobs, cancel } = useMediaJobs()
+  const activeJobs = useMemo(
+    () => jobs.filter(j => !MEDIA_JOB_TERMINAL_STATUSES.has(j.status)),
+    [jobs]
+  )
 
   // Helper: produce a same-origin path for an artifact suitable for the
   // backend's processImageFile (which downloads http(s) URLs server-side).
@@ -148,6 +158,50 @@ export default function Generations() {
         </h1>
         <p className="page-subtitle">Every image, video, and audio output you've generated — searchable by prompt, replayable, deletable.</p>
       </div>
+
+      {activeJobs.length > 0 && (
+        <section className="gen-active-queue">
+          <div className="gen-active-queue-header">
+            <i className="fas fa-layer-group" />
+            <span>{activeJobs.length} active generation{activeJobs.length === 1 ? '' : 's'}</span>
+          </div>
+          <div className="gen-active-queue-list">
+            {activeJobs.map(j => {
+              const icon = j.type === 'video' ? 'fa-film'
+                : j.type === 'audio_tts' ? 'fa-microphone'
+                : j.type === 'audio_sound' ? 'fa-music'
+                : 'fa-image'
+              const prompt = (j.request && typeof j.request.prompt === 'string')
+                ? j.request.prompt.split('|')[0] : ''
+              return (
+                <div key={j.id} className="gen-active-queue-card">
+                  <i className={`fas ${icon} gen-active-queue-icon`} />
+                  <div className="gen-active-queue-meta">
+                    <div className="gen-active-queue-row">
+                      <span className="gen-active-queue-model" title={j.model}>
+                        {j.model || j.type}
+                      </span>
+                      <span className={`jobs-dock-badge badge-${j.status === 'running' ? 'running' : 'pending'}`}>
+                        {j.status}
+                      </span>
+                    </div>
+                    {prompt && <div className="gen-active-queue-prompt" title={prompt}>{prompt}</div>}
+                    {j.status === 'running' && (
+                      <div className="jobs-dock-progress">
+                        <div className="jobs-dock-progress-fill"
+                          style={{ width: `${Math.max(5, (j.progress || 0) * 100)}%` }} />
+                      </div>
+                    )}
+                  </div>
+                  <button className="jobs-dock-cancel" onClick={() => cancel(j.id)} title="Cancel">
+                    <i className="fas fa-xmark" />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       <div className="gen-tabs">
         {TABS.map(t => (
