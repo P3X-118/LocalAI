@@ -734,6 +734,20 @@ public:
         common_params params;
         params_parse(ctx_server, request, params);
 
+        // eagledrive ED-022: idempotency for shared-singleton reuse. LocalAI
+        // force-calls LoadModel on every cache hit for shared-singleton backends
+        // (see pkg/model/initializers.go sharedSingletonBackend); without this the
+        // model would reload from disk on every request. If the same model is
+        // already loaded in the same mode (embedding/predict + pooling), no-op.
+        if (loaded_model
+            && params_base.model.path == params.model.path
+            && params_base.embedding == params.embedding
+            && params_base.pooling_type == params.pooling_type) {
+            result->set_message("Model already loaded");
+            result->set_success(true);
+            return grpc::Status::OK;
+        }
+
         common_init();
         // Ensure debug logs are enabled after common_init() sets up logging
         common_log_set_verbosity_thold(params.verbosity);
