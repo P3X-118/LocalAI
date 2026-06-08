@@ -668,6 +668,12 @@ static void params_parse(server_context& /*ctx_server*/, const backend::ModelOpt
     params.embedding = request->embeddings() || request->reranking();
     if (request->reranking()) {
         params.pooling_type = LLAMA_POOLING_TYPE_RANK;
+    } else if (request->embeddings()) {
+        // eagledrive ED-022: honor the model GGUF pooling_type (e.g. Qwen3-Embedding = LAST)
+        // instead of the common_params default (NONE), which makes /embeddings emit unpooled
+        // per-token vectors and breaks cosine/RAG consumers (LocalRecall). Chat-model
+        // embedders have no pooling metadata so they stay UNSPECIFIED->NONE (unchanged).
+        params.pooling_type = LLAMA_POOLING_TYPE_UNSPECIFIED;
     }
 
 
