@@ -190,12 +190,11 @@ func (ml *ModelLoader) backendLoader(opts ...Option) (client grpc.Backend, err e
 var sharedSingletonBackend = map[string]bool{
 	"comfy":   true,
 	"comfyui": true,
-	// eagledrive ED-022: the Jetson llama-cpp sidecar multiplexes every llama
-	// model (chat, embeddings, VLM) on one gRPC instance, so cache hits must
-	// re-sync the active model+mode. Embedder yamls use backend "llama-cpp";
-	// chat/VLM yamls use the resolved "nvidia-l4t-arm64-llama-cpp".
-	"llama-cpp":                  true,
-	"nvidia-l4t-arm64-llama-cpp": true,
+	// NB (ED-022): do NOT add the llama-cpp backends here. The force-LoadModel-on-
+	// cache-hit it triggers CRASHES the single-model llama-cpp sidecar under concurrent
+	// VLM load (vector::_M_range_check). The embedder is isolated via a dedicated sidecar
+	// instead (see eagledrive tools/deploy-embedder-window.sh). Pooling fix lives in
+	// grpc-server.cpp; idempotent LoadModel there is retained (harmless without this map).
 }
 
 // enforceLRULimit enforces the LRU limit before loading a new model.
