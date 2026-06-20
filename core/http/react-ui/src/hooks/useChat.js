@@ -204,6 +204,13 @@ export function useChat(initialModel = '') {
 
     const chatId = activeChat.id
     const model = options.model || activeChat.model
+    if (!model) {
+      // Defense-in-depth: never POST a model-less chat request. The server
+      // would fall back to a default model, and a buggy/stale client could
+      // silently pin (and thrash) the GPU. The Chat send button also guards this.
+      console.warn('[useChat] refusing to send: no model selected')
+      return
+    }
     const temperature = activeChat.temperature
     const topP = activeChat.topP
     const topK = activeChat.topK

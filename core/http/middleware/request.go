@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -111,8 +112,25 @@ func (re *RequestExtractor) BuildFilteredFirstAvailableDefaultModel(filterFn con
 				return next(c)
 			}
 
-			c.Set(CONTEXT_LOCALS_KEY_MODEL_NAME, modelNames[0])
-			xlog.Debug("context local model name not found, setting to the first model", "first model name", modelNames[0])
+			// A request without a model would otherwise get modelNames[0], but
+			// ListModels' order is non-deterministic (Go map iteration) — so
+			// successive model-less requests could each load (and, under
+			// single-active-backend, thrash between) different large models.
+			// Pick deterministically: prefer the operator-configured default
+			// (LOCALAI_DEFAULT_MODEL) when it's eligible for this endpoint, else
+			// the lexicographically-first eligible model.
+			sort.Strings(modelNames)
+			chosen := modelNames[0]
+			if def := re.applicationConfig.DefaultModel; def != "" {
+				for _, m := range modelNames {
+					if m == def {
+						chosen = def
+						break
+					}
+				}
+			}
+			c.Set(CONTEXT_LOCALS_KEY_MODEL_NAME, chosen)
+			xlog.Debug("no model in request; applied default model", "model", chosen, "configured_default", re.applicationConfig.DefaultModel)
 			return next(c)
 		}
 	}

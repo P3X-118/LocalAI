@@ -76,6 +76,10 @@ type ApplicationConfig struct {
 
 	ModelsURL []string
 
+	// DefaultModel is used for requests that omit a model (model-less requests).
+	// When empty, the first eligible model is chosen deterministically.
+	DefaultModel string
+
 	WatchDogBusyTimeout, WatchDogIdleTimeout time.Duration
 	WatchDogInterval                         time.Duration // Interval between watchdog checks
 
@@ -638,6 +642,14 @@ func WithAgentPoolAPIKey(key string) AppOption {
 func WithAgentPoolDefaultModel(model string) AppOption {
 	return func(o *ApplicationConfig) {
 		o.AgentPool.DefaultModel = model
+	}
+}
+
+// WithDefaultModel sets the model used for requests that don't specify one
+// (model-less requests). Mapped from LOCALAI_DEFAULT_MODEL.
+func WithDefaultModel(model string) AppOption {
+	return func(o *ApplicationConfig) {
+		o.DefaultModel = model
 	}
 }
 

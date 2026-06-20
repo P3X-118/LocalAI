@@ -104,6 +104,7 @@ type RunCMD struct {
 	AgentPoolAPIURL                string `env:"LOCALAI_AGENT_POOL_API_URL" help:"Default API URL for agents (defaults to self-referencing LocalAI)" group:"agents"`
 	AgentPoolAPIKey                string `env:"LOCALAI_AGENT_POOL_API_KEY" help:"Default API key for agents (defaults to first LocalAI API key)" group:"agents"`
 	AgentPoolDefaultModel          string `env:"LOCALAI_AGENT_POOL_DEFAULT_MODEL" help:"Default model for agents" group:"agents"`
+	DefaultModel                   string `env:"LOCALAI_DEFAULT_MODEL" help:"Default model for requests that omit one (model-less requests); when unset the first eligible model is chosen deterministically" group:"models"`
 	AgentPoolMultimodalModel       string `env:"LOCALAI_AGENT_POOL_MULTIMODAL_MODEL" help:"Default multimodal model for agents" group:"agents"`
 	AgentPoolTranscriptionModel    string `env:"LOCALAI_AGENT_POOL_TRANSCRIPTION_MODEL" help:"Default transcription model for agents" group:"agents"`
 	AgentPoolTranscriptionLanguage string `env:"LOCALAI_AGENT_POOL_TRANSCRIPTION_LANGUAGE" help:"Default transcription language for agents" group:"agents"`
@@ -276,6 +277,9 @@ func (r *RunCMD) Run(ctx *cliContext.Context) error {
 	}
 	if r.AgentPoolDefaultModel != "" {
 		opts = append(opts, config.WithAgentPoolDefaultModel(r.AgentPoolDefaultModel))
+	}
+	if r.DefaultModel != "" {
+		opts = append(opts, config.WithDefaultModel(r.DefaultModel))
 	}
 	if r.AgentPoolMultimodalModel != "" {
 		opts = append(opts, config.WithAgentPoolMultimodalModel(r.AgentPoolMultimodalModel))
