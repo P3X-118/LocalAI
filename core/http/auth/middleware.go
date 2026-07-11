@@ -447,6 +447,14 @@ func tryAuthenticate(c echo.Context, db *gorm.DB, appConfig *config.ApplicationC
 		if key, err := ValidateAPIKey(db, token, hmacSecret); err == nil {
 			return &key.User
 		}
+
+		// Try as an Authentik service-account token (fleet control plane).
+		// No-op unless Auth.AuthentikURL is set; validated against Authentik +
+		// cached, resolving to a local mirror user keyed by the Authentik
+		// identity so agent/collection ownership is consistent across the fleet.
+		if user := ValidateAuthentikToken(db, token, appConfig.Auth.AuthentikURL, appConfig.Auth.OIDCAdminGroups); user != nil {
+			return user
+		}
 	}
 
 	// c. x-api-key / xi-api-key headers

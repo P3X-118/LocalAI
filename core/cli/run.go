@@ -132,6 +132,7 @@ type RunCMD struct {
 	AuthBaseURL          string `env:"LOCALAI_BASE_URL" help:"Base URL for OAuth callbacks (e.g. http://localhost:8080)" group:"auth"`
 	AuthAdminEmail       string `env:"LOCALAI_ADMIN_EMAIL" help:"Email address to auto-promote to admin role" group:"auth"`
 	OIDCAdminGroups      []string `env:"LOCALAI_OIDC_ADMIN_GROUPS" help:"Comma-separated OIDC group names whose members are auto-promoted to admin (IdP-driven RBAC)" group:"auth"`
+	AuthentikURL         string `env:"LOCALAI_AUTHENTIK_URL" help:"Authentik base URL; when set, Authentik service-account tokens authenticate as fleet identities" group:"auth"`
 	AuthRegistrationMode string `env:"LOCALAI_REGISTRATION_MODE" default:"open" help:"Registration mode: 'open' (default), 'approval', or 'invite' (invite code required)" group:"auth"`
 	DisableLocalAuth     bool   `env:"LOCALAI_DISABLE_LOCAL_AUTH" default:"false" help:"Disable local email/password registration and login (use with OAuth/OIDC-only setups)" group:"auth"`
 	AuthAPIKeyHMACSecret string `env:"LOCALAI_AUTH_HMAC_SECRET" help:"HMAC secret for API key hashing (auto-generated if empty)" group:"auth"`
@@ -355,6 +356,9 @@ func (r *RunCMD) Run(ctx *cliContext.Context) error {
 		}
 		if len(r.OIDCAdminGroups) > 0 {
 			opts = append(opts, config.WithAuthOIDCAdminGroups(r.OIDCAdminGroups))
+		}
+		if r.AuthentikURL != "" {
+			opts = append(opts, config.WithAuthAuthentikURL(r.AuthentikURL))
 		}
 		if r.AuthRegistrationMode != "" {
 			opts = append(opts, config.WithAuthRegistrationMode(r.AuthRegistrationMode))
