@@ -53,6 +53,45 @@ func MaybePromote(db *gorm.DB, user *User, adminEmail string) bool {
 	return false
 }
 
+// groupsGrantAdmin reports whether any of the user's OIDC groups is in the
+// configured admin-group allowlist (case-insensitive). This is how an external
+// IdP (e.g. Authentik) drives dex roles: membership in a group like "sgc-admins"
+// grants the admin role, so RBAC is managed centrally in the IdP instead of a
+// single hard-coded admin email.
+func groupsGrantAdmin(userGroups, adminGroups []string) bool {
+	if len(userGroups) == 0 || len(adminGroups) == 0 {
+		return false
+	}
+	for _, ag := range adminGroups {
+		ag = strings.TrimSpace(ag)
+		if ag == "" {
+			continue
+		}
+		for _, ug := range userGroups {
+			if strings.EqualFold(strings.TrimSpace(ug), ag) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// MaybePromoteByGroups promotes a user to admin on login when any of their OIDC
+// groups is in the admin-group allowlist. Promote-only (never demotes), mirroring
+// MaybePromote — an IdP group removal is reconciled by an explicit admin action,
+// never a silent lockout. Returns true if the user was promoted.
+func MaybePromoteByGroups(db *gorm.DB, user *User, userGroups, adminGroups []string) bool {
+	if user.Role == RoleAdmin {
+		return false
+	}
+	if groupsGrantAdmin(userGroups, adminGroups) {
+		user.Role = RoleAdmin
+		db.Model(user).Update("role", RoleAdmin)
+		return true
+	}
+	return false
+}
+
 // ValidateInvite checks that an invite code exists, is unused, and has not expired.
 // The code is hashed with HMAC-SHA256 before lookup.
 func ValidateInvite(db *gorm.DB, code, hmacSecret string) (*InviteCode, error) {

@@ -35,6 +35,7 @@ type oauthUserInfo struct {
 	Email     string
 	Name      string
 	AvatarURL string
+	Groups    []string // OIDC group claims (drives role mapping via admin-group allowlist)
 }
 
 // OAuthManager manages multiple OAuth/OIDC providers.
@@ -149,7 +150,7 @@ func (m *OAuthManager) LoginHandler(providerName string) echo.HandlerFunc {
 
 // CallbackHandler handles the OAuth callback, creates/updates the user, and
 // creates a session.
-func (m *OAuthManager) CallbackHandler(providerName string, db *gorm.DB, adminEmail, registrationMode, hmacSecret string) echo.HandlerFunc {
+func (m *OAuthManager) CallbackHandler(providerName string, db *gorm.DB, adminEmail string, adminGroups []string, registrationMode, hmacSecret string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		provider, ok := m.providers[providerName]
 		if !ok {
@@ -229,8 +230,9 @@ func (m *OAuthManager) CallbackHandler(providerName string, db *gorm.DB, adminEm
 			}
 		}
 
-		// Upsert user (with invite code support)
-		user, err := upsertOAuthUser(db, providerName, userInfo, adminEmail, registrationMode)
+		// Upsert user (with invite code support). Admin-group membership is
+		// evaluated at creation so a group-admin lands active, not pending.
+		user, err := upsertOAuthUser(db, providerName, userInfo, adminEmail, adminGroups, registrationMode)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create user"})
 		}
@@ -251,8 +253,10 @@ func (m *OAuthManager) CallbackHandler(providerName string, db *gorm.DB, adminEm
 			return c.JSON(http.StatusForbidden, map[string]string{"error": "account pending approval"})
 		}
 
-		// Maybe promote on login
+		// Maybe promote on login — by admin email, then by IdP admin-group
+		// membership (Authentik-driven RBAC; group changes propagate on re-login).
 		MaybePromote(db, user, adminEmail)
+		MaybePromoteByGroups(db, user, userInfo.Groups, adminGroups)
 
 		// Create session
 		sessionID, err := CreateSession(db, user.ID, hmacSecret)
@@ -278,10 +282,11 @@ func extractOIDCUserInfo(ctx context.Context, verifier *oidc.IDTokenVerifier, to
 	}
 
 	var claims struct {
-		Sub     string `json:"sub"`
-		Email   string `json:"email"`
-		Name    string `json:"name"`
-		Picture string `json:"picture"`
+		Sub     string   `json:"sub"`
+		Email   string   `json:"email"`
+		Name    string   `json:"name"`
+		Picture string   `json:"picture"`
+		Groups  []string `json:"groups"`
 	}
 	if err := idToken.Claims(&claims); err != nil {
 		return nil, fmt.Errorf("failed to parse ID token claims: %w", err)
@@ -292,6 +297,7 @@ func extractOIDCUserInfo(ctx context.Context, verifier *oidc.IDTokenVerifier, to
 		Email:     claims.Email,
 		Name:      claims.Name,
 		AvatarURL: claims.Picture,
+		Groups:    claims.Groups,
 	}, nil
 }
 
@@ -393,7 +399,7 @@ func fetchGitHubPrimaryEmail(ctx context.Context, accessToken string) (string, e
 	return "", fmt.Errorf("no verified email found")
 }
 
-func upsertOAuthUser(db *gorm.DB, provider string, info *oauthUserInfo, adminEmail, registrationMode string) (*User, error) {
+func upsertOAuthUser(db *gorm.DB, provider string, info *oauthUserInfo, adminEmail string, adminGroups []string, registrationMode string) (*User, error) {
 	// Normalize email from provider (#10)
 	if info.Email != "" {
 		info.Email = strings.ToLower(strings.TrimSpace(info.Email))
@@ -423,7 +429,12 @@ func upsertOAuthUser(db *gorm.DB, provider string, info *oauthUserInfo, adminEma
 	}
 
 	role := AssignRole(db, info.Email, adminEmail)
-	// First user is always active regardless of registration mode
+	// IdP admin-group membership grants admin at creation too (else a group-admin
+	// would be created pending in approval mode and blocked before promotion).
+	if role != RoleAdmin && groupsGrantAdmin(info.Groups, adminGroups) {
+		role = RoleAdmin
+	}
+	// First user (or admin by email/group) is always active regardless of mode.
 	if role == RoleAdmin {
 		status = StatusActive
 	}

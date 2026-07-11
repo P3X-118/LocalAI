@@ -206,13 +206,13 @@ func RegisterAuthRoutes(e *echo.Echo, app *application.Application) {
 			if appConfig.Auth.GitHubClientID != "" {
 				e.GET("/api/auth/github/login", oauthMgr.LoginHandler(auth.ProviderGitHub))
 				e.GET("/api/auth/github/callback", oauthMgr.CallbackHandler(
-					auth.ProviderGitHub, db, appConfig.Auth.AdminEmail, appConfig.Auth.RegistrationMode, appConfig.Auth.APIKeyHMACSecret,
+					auth.ProviderGitHub, db, appConfig.Auth.AdminEmail, appConfig.Auth.OIDCAdminGroups, appConfig.Auth.RegistrationMode, appConfig.Auth.APIKeyHMACSecret,
 				))
 			}
 			if appConfig.Auth.OIDCClientID != "" {
 				e.GET("/api/auth/oidc/login", oauthMgr.LoginHandler(auth.ProviderOIDC))
 				e.GET("/api/auth/oidc/callback", oauthMgr.CallbackHandler(
-					auth.ProviderOIDC, db, appConfig.Auth.AdminEmail, appConfig.Auth.RegistrationMode, appConfig.Auth.APIKeyHMACSecret,
+					auth.ProviderOIDC, db, appConfig.Auth.AdminEmail, appConfig.Auth.OIDCAdminGroups, appConfig.Auth.RegistrationMode, appConfig.Auth.APIKeyHMACSecret,
 				))
 			}
 		}
@@ -1149,8 +1149,8 @@ func RegisterAuthRoutes(e *echo.Echo, app *application.Application) {
 				"id":         inv.ID,
 				"codePrefix": inv.CodePrefix,
 				"expiresAt":  inv.ExpiresAt,
-				"createdAt": inv.CreatedAt,
-				"usedAt":    inv.UsedAt,
+				"createdAt":  inv.CreatedAt,
+				"usedAt":     inv.UsedAt,
 				"createdBy": map[string]interface{}{
 					"id":   inv.Creator.ID,
 					"name": inv.Creator.Name,
