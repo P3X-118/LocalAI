@@ -183,6 +183,7 @@ func (s *AgentPoolService) Start(ctx context.Context) error {
 					st.Mu.RUnlock()
 					if exists {
 						if db, comp, ok := collections.RAGProviderFromState(st)(bare); ok {
+							xlog.Debug("RAG: using per-user collection", "userID", userID, "collection", bare)
 							return db, comp, ok
 						}
 					}
@@ -200,13 +201,21 @@ func (s *AgentPoolService) Start(ctx context.Context) error {
 		agiServices.FiltersConfigMeta(),
 	)
 
-	// Start all agents
-	if err := pool.StartAll(); err != nil {
-		xlog.Error("Failed to start agent pool", "error", err)
-	}
-
 	xlog.Info("Agent pool started", "stateDir", stateDir, "apiURL", apiURL)
 	return nil
+}
+
+// StartAgents loads and starts all persisted agents. It is separate from Start
+// so the caller can wire per-user services (SetUserServicesManager) first — the
+// RAG provider resolves each agent's KB against its owner's per-user collections
+// at construction time, which requires userServices to be set beforehand.
+func (s *AgentPoolService) StartAgents() {
+	if s.pool == nil {
+		return
+	}
+	if err := s.pool.StartAll(); err != nil {
+		xlog.Error("Failed to start agent pool", "error", err)
+	}
 }
 
 func (s *AgentPoolService) Stop() {
