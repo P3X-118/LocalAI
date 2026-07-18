@@ -153,16 +153,16 @@ func (s *AgentPoolService) Start(ctx context.Context) error {
 
 	// Create in-process collections backend and RAG provider directly
 	collectionsCfg := &collections.Config{
-		LLMAPIURL:       apiURL,
-		LLMAPIKey:       apiKey,
-		LLMModel:        cfg.DefaultModel,
+		LLMAPIURL:        apiURL,
+		LLMAPIKey:        apiKey,
+		LLMModel:         cfg.DefaultModel,
 		CollectionDBPath: collectionDBPath,
 		FileAssets:       fileAssets,
-		VectorEngine:    cfg.VectorEngine,
-		EmbeddingModel:  cfg.EmbeddingModel,
-		MaxChunkingSize: cfg.MaxChunkingSize,
-		ChunkOverlap:    cfg.ChunkOverlap,
-		DatabaseURL:     cfg.DatabaseURL,
+		VectorEngine:     cfg.VectorEngine,
+		EmbeddingModel:   cfg.EmbeddingModel,
+		MaxChunkingSize:  cfg.MaxChunkingSize,
+		ChunkOverlap:     cfg.ChunkOverlap,
+		DatabaseURL:      cfg.DatabaseURL,
 	}
 	collectionsBackend, collectionsState := collections.NewInProcessBackend(collectionsCfg)
 	s.collectionsBackend = collectionsBackend
@@ -170,6 +170,25 @@ func (s *AgentPoolService) Start(ctx context.Context) error {
 	// Set up in-process RAG provider from collections state
 	embedded := collections.RAGProviderFromState(collectionsState)
 	pool.SetRAGProvider(func(collectionName, _, _ string) (agent.RAGDB, state.KBCompactionClient, bool) {
+		// Agents are keyed "<userID>:<agentName>", and their uploaded KB collections
+		// live in that user's per-user collections backend, not the global one. Route
+		// there when the collection actually exists per-user, else fall back to global.
+		if s.userServices != nil {
+			if idx := strings.IndexByte(collectionName, ':'); idx > 0 {
+				userID := collectionName[:idx]
+				bare := strings.ToLower(strings.TrimSpace(collectionName[idx+1:]))
+				if st := s.userServices.GetCollectionsState(userID); st != nil {
+					st.Mu.RLock()
+					_, exists := st.Collections[bare]
+					st.Mu.RUnlock()
+					if exists {
+						if db, comp, ok := collections.RAGProviderFromState(st)(bare); ok {
+							return db, comp, ok
+						}
+					}
+				}
+			}
+		}
 		return embedded(collectionName)
 	})
 
