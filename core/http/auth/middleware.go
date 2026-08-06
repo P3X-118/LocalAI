@@ -18,6 +18,11 @@ import (
 const (
 	contextKeyUser = "auth_user"
 	contextKeyRole = "auth_role"
+	// Set when authentication came via a named user_api_keys row — the
+	// key's own label (e.g. an agent's key). Lets the usage ledger
+	// attribute per-key instead of collapsing everything into the key
+	// owner's name ("API Key User" for pool-minted keys).
+	contextKeyAPIKeyName = "auth_api_key_name"
 )
 
 // Middleware returns an Echo middleware that handles authentication.
@@ -205,6 +210,14 @@ func GetUser(c echo.Context) *User {
 		return nil
 	}
 	return u
+}
+
+// GetAPIKeyName returns the label of the user_api_keys row that
+// authenticated this request, or "" when authentication came from a
+// session, the shared legacy key, or an unlabeled key.
+func GetAPIKeyName(c echo.Context) string {
+	name, _ := c.Get(contextKeyAPIKeyName).(string)
+	return name
 }
 
 // GetUserRole returns the role of the authenticated user, or empty string.
@@ -445,6 +458,9 @@ func tryAuthenticate(c echo.Context, db *gorm.DB, appConfig *config.ApplicationC
 
 		// Try as user API key
 		if key, err := ValidateAPIKey(db, token, hmacSecret); err == nil {
+			if key.Name != "" {
+				c.Set(contextKeyAPIKeyName, key.Name)
+			}
 			return &key.User
 		}
 	}
@@ -453,6 +469,9 @@ func tryAuthenticate(c echo.Context, db *gorm.DB, appConfig *config.ApplicationC
 	for _, header := range []string{"x-api-key", "xi-api-key"} {
 		if key := c.Request().Header.Get(header); key != "" {
 			if apiKey, err := ValidateAPIKey(db, key, hmacSecret); err == nil {
+				if apiKey.Name != "" {
+					c.Set(contextKeyAPIKeyName, apiKey.Name)
+				}
 				return &apiKey.User
 			}
 		}
@@ -462,6 +481,9 @@ func tryAuthenticate(c echo.Context, db *gorm.DB, appConfig *config.ApplicationC
 	if cookie, err := c.Cookie("token"); err == nil && cookie.Value != "" {
 		// Try as user API key
 		if key, err := ValidateAPIKey(db, cookie.Value, hmacSecret); err == nil {
+			if key.Name != "" {
+				c.Set(contextKeyAPIKeyName, key.Name)
+			}
 			return &key.User
 		}
 	}

@@ -149,9 +149,15 @@ func UsageMiddleware(db *gorm.DB) echo.MiddlewareFunc {
 				return handlerErr
 			}
 
+			// Per-key attribution: a named user_api_keys row (agents get
+			// one each) beats the owning user's generic display name.
+			userName := user.Name
+			if keyName := auth.GetAPIKeyName(c); keyName != "" {
+				userName = keyName
+			}
 			record := &auth.UsageRecord{
 				UserID:           user.ID,
-				UserName:         user.Name,
+				UserName:         userName,
 				Model:            resp.Model,
 				Endpoint:         c.Request().URL.Path,
 				PromptTokens:     resp.Usage.PromptTokens,
