@@ -15,6 +15,7 @@ import (
 
 	"github.com/P3X-118/LocalAI/core/config"
 	"github.com/P3X-118/LocalAI/core/http/auth"
+	"github.com/google/uuid"
 
 	"github.com/mudler/LocalAGI/core/agent"
 	"github.com/mudler/LocalAGI/core/sse"
@@ -188,6 +189,29 @@ func (s *AgentPoolService) Start(ctx context.Context) error {
 
 	xlog.Info("Agent pool started", "stateDir", stateDir, "apiURL", apiURL)
 	return nil
+}
+
+// keyOwner resolves the user that should own an auto-minted agent API key.
+// Requests authenticated with the shared legacy key carry the synthetic
+// user ID "legacy-api-key", which has no users row — keys minted under it
+// fail the ownership join in ValidateAPIKey and 401 forever (this silently
+// broke 13 agents' LLM calls until 2026-08-06). Mint those under a real
+// service user instead, creating it on first use.
+func (s *AgentPoolService) keyOwner(userID string) string {
+	if userID != "legacy-api-key" {
+		return userID
+	}
+	const svcName = "LocalAI agent pool"
+	var u auth.User
+	if err := s.authDB.Where("name = ?", svcName).First(&u).Error; err == nil {
+		return u.ID
+	}
+	u = auth.User{ID: uuid.New().String(), Name: svcName, Role: "user"}
+	if err := s.authDB.Create(&u).Error; err != nil {
+		xlog.Error("failed to create agent-pool service user; minting under legacy id", "error", err)
+		return userID
+	}
+	return u.ID
 }
 
 func (s *AgentPoolService) Stop() {
@@ -1927,7 +1951,7 @@ func (s *AgentPoolService) CreateAgentForUser(userID string, config *state.Agent
 
 	// Auto-generate a user API key when auth is active and none is specified
 	if s.authDB != nil && userID != "" && config.APIKey == "" {
-		plaintext, _, err := auth.CreateAPIKey(s.authDB, userID, "agent:"+config.Name, "user", s.appConfig.Auth.APIKeyHMACSecret, nil)
+		plaintext, _, err := auth.CreateAPIKey(s.authDB, s.keyOwner(userID), "agent:"+config.Name, "user", s.appConfig.Auth.APIKeyHMACSecret, nil)
 		if err != nil {
 			return fmt.Errorf("failed to create API key for agent: %w", err)
 		}
@@ -1960,7 +1984,7 @@ func (s *AgentPoolService) UpdateAgentForUser(userID, name string, config *state
 
 	// Auto-generate a user API key when auth is active and none is specified
 	if s.authDB != nil && userID != "" && config.APIKey == "" {
-		plaintext, _, err := auth.CreateAPIKey(s.authDB, userID, "agent:"+name, "user", s.appConfig.Auth.APIKeyHMACSecret, nil)
+		plaintext, _, err := auth.CreateAPIKey(s.authDB, s.keyOwner(userID), "agent:"+name, "user", s.appConfig.Auth.APIKeyHMACSecret, nil)
 		if err != nil {
 			return fmt.Errorf("failed to create API key for agent: %w", err)
 		}
@@ -2047,7 +2071,7 @@ func (s *AgentPoolService) ImportAgentForUser(userID string, data []byte) error 
 
 	// Auto-generate a user API key when auth is active and none is specified
 	if s.authDB != nil && userID != "" && cfg.APIKey == "" {
-		plaintext, _, err := auth.CreateAPIKey(s.authDB, userID, "agent:"+cfg.Name, "user", s.appConfig.Auth.APIKeyHMACSecret, nil)
+		plaintext, _, err := auth.CreateAPIKey(s.authDB, s.keyOwner(userID), "agent:"+cfg.Name, "user", s.appConfig.Auth.APIKeyHMACSecret, nil)
 		if err != nil {
 			return fmt.Errorf("failed to create API key for agent: %w", err)
 		}
