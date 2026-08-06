@@ -234,6 +234,33 @@ Use these HTTP status codes:
 
 If your endpoint should be tracked for usage (token counts, request counts), add the `usageMiddleware` to its middleware chain. See `core/http/middleware/usage.go` and how it's applied in `routes/openai.go`.
 
+Attribution: a usage row records the **authenticating API key's label** when
+one is set (`auth.GetAPIKeyName`, populated by `tryAuthenticate` on all
+three key paths — bearer, `x-api-key`/`xi-api-key`, token cookie), falling
+back to the user's display name. Name keys meaningfully (`agent:<name>` is
+the pool convention) — the label is what operators see in the ledger.
+
+## API keys: ownership and attribution
+
+Think of a key as a name badge: it is only valid if the department that
+issued it exists in the directory. `ValidateAPIKey` resolves the key **and
+its owning `users` row** via the gorm foreign key — a key whose `user_id`
+has no matching user **fails authentication entirely**, with no distinct
+error. On 2026-08-06 this silently broke 13 pool agents for weeks: their
+keys were auto-minted under the synthetic `legacy-api-key` user ID (which
+has no `users` row) and 401'd on every call while looking perfectly valid
+(`last_used` stayed NULL — the tell).
+
+Rules:
+
+- **Never mint a key under the synthetic `legacy-api-key` ID.** In pool
+  code, route the owner through `AgentPoolService.keyOwner()`
+  (`core/services/agent_pool.go`), which maps legacy-authenticated callers
+  to the real "LocalAI agent pool" service user, creating it on first use.
+- A valid-looking key that always 401s → check for a dangling owner:
+  `SELECT k.name FROM user_api_keys k LEFT JOIN users u ON u.id = k.user_id
+  WHERE u.id IS NULL;`
+
 ## Path protection rules
 
 The global auth middleware classifies paths as API paths or non-API paths:
@@ -248,6 +275,8 @@ If you add endpoints under a new top-level path prefix, add it to `isAPIPath()` 
 
 When adding a new endpoint:
 
+- [ ] Minting API keys anywhere? The owner must be a real `users` row (see
+      "API keys: ownership and attribution" above)
 - [ ] Handler in `core/http/endpoints/`
 - [ ] Route registered in appropriate `core/http/routes/` file
 - [ ] Auth level chosen: public / standard / admin / feature-gated

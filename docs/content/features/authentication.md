@@ -230,7 +230,14 @@ For OIDC, invite codes work the same way as GitHub OAuth — the invite code is 
 
 ### User API Keys
 
-Authenticated users can create personal API keys for programmatic access:
+Authenticated users can create personal API keys for programmatic access.
+
+**Key ownership**: a key is only valid while its owning user exists — the
+validator resolves the key *and* its owner, so a key whose owner was deleted
+(or was never a real user) fails authentication entirely. If a key that
+looks correct always returns 401, check that its owner still exists. Agent
+pool keys are minted under the "LocalAI agent pool" service user
+automatically.
 
 ```bash
 # Create an API key (requires session auth)
@@ -268,7 +275,15 @@ User API keys inherit the creating user's role. Admin keys grant admin access; u
 
 ## Usage Tracking
 
-When authentication is enabled, LocalAI automatically tracks per-user token usage for inference endpoints. Usage data includes:
+When authentication is enabled, LocalAI automatically tracks per-user token usage for inference endpoints.
+
+**Attribution**: each usage row records the **label of the API key** that
+authenticated the request when the key has one, falling back to the user's
+display name otherwise. Agent pool keys are auto-labeled `agent:<name>`, so
+per-agent token and cost usage is visible directly in the ledger and any
+dashboard built on it — name your keys accordingly.
+
+Usage data includes:
 
 - **Prompt tokens**, **completion tokens**, and **total tokens** per request
 - **Model** used and **endpoint** called
