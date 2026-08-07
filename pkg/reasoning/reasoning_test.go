@@ -1142,3 +1142,45 @@ var _ = Describe("Custom Tokens and Tag Pairs Integration", func() {
 func boolPtr(b bool) *bool {
 	return &b
 }
+
+var _ = Describe("ContentFallbackToReasoning", func() {
+	// A reasoning-distill model (qwen3.5-9b-glm5.1-distill) puts its whole
+	// answer inside the thinking span, so extraction legitimately leaves the
+	// content empty. Without the fallback the agent pool reads that empty
+	// content and echoes the user prompt back instead of answering.
+	distillOutput := "<think>{\"in_area\": false, \"location\": \"Houston, TX 77042\"}</think>"
+	enabled := true
+	disabled := false
+
+	Context("when the model leaves content empty", func() {
+		It("returns the reasoning as content when enabled", func() {
+			cfg := Config{ContentFallbackToReasoning: &enabled}
+			reasoning, cleaned := ExtractReasoningWithConfig(distillOutput, "", cfg)
+			Expect(strings.TrimSpace(reasoning)).NotTo(BeEmpty())
+			Expect(cleaned).To(Equal(reasoning))
+			Expect(cleaned).To(ContainSubstring("Houston"))
+		})
+
+		It("leaves content empty when disabled (default behaviour)", func() {
+			cfg := Config{ContentFallbackToReasoning: &disabled}
+			reasoning, cleaned := ExtractReasoningWithConfig(distillOutput, "", cfg)
+			Expect(strings.TrimSpace(reasoning)).NotTo(BeEmpty())
+			Expect(strings.TrimSpace(cleaned)).To(BeEmpty())
+		})
+
+		It("is off when unset, so other models are untouched", func() {
+			reasoning, cleaned := ExtractReasoningWithConfig(distillOutput, "", Config{})
+			Expect(strings.TrimSpace(reasoning)).NotTo(BeEmpty())
+			Expect(strings.TrimSpace(cleaned)).To(BeEmpty())
+		})
+	})
+
+	Context("when the model already emits real content", func() {
+		It("never overwrites it", func() {
+			cfg := Config{ContentFallbackToReasoning: &enabled}
+			reasoning, cleaned := ExtractReasoningWithConfig("<think>deliberating</think>the answer", "", cfg)
+			Expect(strings.TrimSpace(reasoning)).To(Equal("deliberating"))
+			Expect(strings.TrimSpace(cleaned)).To(Equal("the answer"))
+		})
+	})
+})
