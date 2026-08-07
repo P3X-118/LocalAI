@@ -84,6 +84,17 @@ func ExtractReasoningWithConfig(content, thinkingStartToken string, config Confi
 		}
 	}
 
+	// content || reasoning. A reasoning-distill model can put its ENTIRE answer
+	// in the thinking span, leaving content empty after extraction; opting in
+	// here hands the reasoning text back as content so consumers that read only
+	// `content` (notably the agent pool, via its own /v1/chat/completions call)
+	// get the answer instead of nothing. Reasoning is left populated as well, so
+	// callers that already read both fields are unaffected.
+	if config.ContentFallbackToReasoning != nil && *config.ContentFallbackToReasoning &&
+		strings.TrimSpace(cleanedContent) == "" && strings.TrimSpace(reasoning) != "" {
+		cleanedContent = reasoning
+	}
+
 	return reasoning, cleanedContent
 }
 
