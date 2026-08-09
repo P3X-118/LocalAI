@@ -166,5 +166,9 @@ func (a *Application) StartAgentPool() {
 	)
 	aps.SetUserServicesManager(usm)
 
+	// Load agents AFTER userServices is wired, so each agent's KB resolves against
+	// its owner's per-user collections at construction time (see StartAgents).
+	aps.StartAgents()
+
 	a.agentPoolService.Store(aps)
 }

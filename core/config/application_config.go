@@ -116,6 +116,8 @@ type AuthConfig struct {
 	OIDCClientSecret   string
 	BaseURL            string // for OAuth callback URLs (e.g. "http://localhost:8080")
 	AdminEmail         string // auto-promote to admin on login
+	OIDCAdminGroups    []string // OIDC group names whose members are auto-promoted to admin (IdP-driven RBAC)
+	AuthentikURL       string // Authentik base URL; when set, Authentik service-account tokens authenticate as fleet identities
 	RegistrationMode   string // "open", "approval" (default when empty), "invite"
 	DisableLocalAuth   bool   // disable local email/password registration and login
 	APIKeyHMACSecret   string // HMAC secret for API key hashing; auto-generated if empty
@@ -780,6 +782,18 @@ func WithAuthBaseURL(baseURL string) AppOption {
 func WithAuthAdminEmail(email string) AppOption {
 	return func(o *ApplicationConfig) {
 		o.Auth.AdminEmail = email
+	}
+}
+
+func WithAuthOIDCAdminGroups(groups []string) AppOption {
+	return func(o *ApplicationConfig) {
+		o.Auth.OIDCAdminGroups = groups
+	}
+}
+
+func WithAuthAuthentikURL(url string) AppOption {
+	return func(o *ApplicationConfig) {
+		o.Auth.AuthentikURL = url
 	}
 }
 

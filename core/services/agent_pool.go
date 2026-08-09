@@ -154,16 +154,16 @@ func (s *AgentPoolService) Start(ctx context.Context) error {
 
 	// Create in-process collections backend and RAG provider directly
 	collectionsCfg := &collections.Config{
-		LLMAPIURL:       apiURL,
-		LLMAPIKey:       apiKey,
-		LLMModel:        cfg.DefaultModel,
+		LLMAPIURL:        apiURL,
+		LLMAPIKey:        apiKey,
+		LLMModel:         cfg.DefaultModel,
 		CollectionDBPath: collectionDBPath,
 		FileAssets:       fileAssets,
-		VectorEngine:    cfg.VectorEngine,
-		EmbeddingModel:  cfg.EmbeddingModel,
-		MaxChunkingSize: cfg.MaxChunkingSize,
-		ChunkOverlap:    cfg.ChunkOverlap,
-		DatabaseURL:     cfg.DatabaseURL,
+		VectorEngine:     cfg.VectorEngine,
+		EmbeddingModel:   cfg.EmbeddingModel,
+		MaxChunkingSize:  cfg.MaxChunkingSize,
+		ChunkOverlap:     cfg.ChunkOverlap,
+		DatabaseURL:      cfg.DatabaseURL,
 	}
 	collectionsBackend, collectionsState := collections.NewInProcessBackend(collectionsCfg)
 	s.collectionsBackend = collectionsBackend
@@ -171,6 +171,26 @@ func (s *AgentPoolService) Start(ctx context.Context) error {
 	// Set up in-process RAG provider from collections state
 	embedded := collections.RAGProviderFromState(collectionsState)
 	pool.SetRAGProvider(func(collectionName, _, _ string) (agent.RAGDB, state.KBCompactionClient, bool) {
+		// Agents are keyed "<userID>:<agentName>", and their uploaded KB collections
+		// live in that user's per-user collections backend, not the global one. Route
+		// there when the collection actually exists per-user, else fall back to global.
+		if s.userServices != nil {
+			if idx := strings.IndexByte(collectionName, ':'); idx > 0 {
+				userID := collectionName[:idx]
+				bare := strings.ToLower(strings.TrimSpace(collectionName[idx+1:]))
+				if st := s.userServices.GetCollectionsState(userID); st != nil {
+					st.Mu.RLock()
+					_, exists := st.Collections[bare]
+					st.Mu.RUnlock()
+					if exists {
+						if db, comp, ok := collections.RAGProviderFromState(st)(bare); ok {
+							xlog.Debug("RAG: using per-user collection", "userID", userID, "collection", bare)
+							return db, comp, ok
+						}
+					}
+				}
+			}
+		}
 		return embedded(collectionName)
 	})
 
@@ -181,11 +201,6 @@ func (s *AgentPoolService) Start(ctx context.Context) error {
 		agiServices.DynamicPromptsConfigMeta(cfg.CustomActionsDir),
 		agiServices.FiltersConfigMeta(),
 	)
-
-	// Start all agents
-	if err := pool.StartAll(); err != nil {
-		xlog.Error("Failed to start agent pool", "error", err)
-	}
 
 	xlog.Info("Agent pool started", "stateDir", stateDir, "apiURL", apiURL)
 	return nil
@@ -212,6 +227,22 @@ func (s *AgentPoolService) keyOwner(userID string) string {
 		return userID
 	}
 	return u.ID
+}
+
+// StartAgents loads and starts all persisted agents. It is separate from Start
+// so the caller can wire per-user services (SetUserServicesManager) first — the
+// RAG provider resolves each agent's KB against its owner's per-user collections
+// at construction time, which requires userServices to be set beforehand.
+// (Reconciliation 2026-08-09: this file carries BOTH lines' features — keyOwner
+// key-minting from sgc-dev-usage-attribution above, per-user RAG + deferred
+// agent start from sgc-oidc-agents-ragfix here.)
+func (s *AgentPoolService) StartAgents() {
+	if s.pool == nil {
+		return
+	}
+	if err := s.pool.StartAll(); err != nil {
+		xlog.Error("Failed to start agent pool", "error", err)
+	}
 }
 
 func (s *AgentPoolService) Stop() {

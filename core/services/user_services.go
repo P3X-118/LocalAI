@@ -21,8 +21,11 @@ type UserServicesManager struct {
 	configLoader     *config.ModelConfigLoader
 	evaluator        *templates.Evaluator
 	collectionsCache map[string]collections.Backend
-	skillsCache      map[string]*skills.Service
-	jobsCache        map[string]*AgentJobService
+	// collectionsStateCache retains each per-user backend's State so the agent
+	// pool's RAG provider can search a user's own collections (see GetCollectionsState).
+	collectionsStateCache map[string]*collections.State
+	skillsCache           map[string]*skills.Service
+	jobsCache             map[string]*AgentJobService
 }
 
 // NewUserServicesManager creates a new UserServicesManager.
@@ -34,14 +37,15 @@ func NewUserServicesManager(
 	evaluator *templates.Evaluator,
 ) *UserServicesManager {
 	return &UserServicesManager{
-		storage:          storage,
-		appConfig:        appConfig,
-		modelLoader:      modelLoader,
-		configLoader:     configLoader,
-		evaluator:        evaluator,
-		collectionsCache: make(map[string]collections.Backend),
-		skillsCache:      make(map[string]*skills.Service),
-		jobsCache:        make(map[string]*AgentJobService),
+		storage:               storage,
+		appConfig:             appConfig,
+		modelLoader:           modelLoader,
+		configLoader:          configLoader,
+		evaluator:             evaluator,
+		collectionsCache:      make(map[string]collections.Backend),
+		collectionsStateCache: make(map[string]*collections.State),
+		skillsCache:           make(map[string]*skills.Service),
+		jobsCache:             make(map[string]*AgentJobService),
 	}
 }
 
@@ -89,9 +93,22 @@ func (m *UserServicesManager) GetCollections(userID string) (collections.Backend
 		DatabaseURL:      cfg.DatabaseURL,
 	}
 
-	backend, _ := collections.NewInProcessBackend(collectionsCfg)
+	backend, st := collections.NewInProcessBackend(collectionsCfg)
 	m.collectionsCache[userID] = backend
+	m.collectionsStateCache[userID] = st
 	return backend, nil
+}
+
+// GetCollectionsState returns the per-user collections State, lazily creating the
+// backend if needed. Used by the agent pool's RAG provider to search a user's own
+// collections (uploads are user-scoped, but the RAG provider defaults to global).
+func (m *UserServicesManager) GetCollectionsState(userID string) *collections.State {
+	if _, err := m.GetCollections(userID); err != nil {
+		return nil
+	}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.collectionsStateCache[userID]
 }
 
 // GetSkills returns the skills service for a user, creating it lazily.
