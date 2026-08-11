@@ -172,9 +172,23 @@ func (re *RequestExtractor) SetModelAndConfig(initializer func() schema.LocalAIR
 				// Remote callers pinned to a renamed/retired model fail
 				// silently from the estate's point of view without this.
 				re.metrics.ObserveUnknownModel(input.ModelName(nil), c.Path())
-			} else if cfg.Model == "" && input.ModelName(nil) != "" {
-				xlog.Debug("config does not include model, using input", "input.ModelName", input.ModelName(nil))
-				cfg.Model = input.ModelName(nil)
+			} else {
+				// err == nil does NOT mean the model exists:
+				// LoadModelConfigFileByName synthesizes a default config for
+				// any unregistered name (the auto-load path), so the branch
+				// above only fires for a malformed yaml. The truth about
+				// "no such model" is the config registry. Agent-as-model
+				// requests never reach here — the agent interceptors run
+				// earlier in the chain and route matches to the pool.
+				if name := input.ModelName(nil); name != "" {
+					if _, known := re.modelConfigLoader.GetModelConfig(name); !known {
+						re.metrics.ObserveUnknownModel(name, c.Path())
+					}
+				}
+				if cfg.Model == "" && input.ModelName(nil) != "" {
+					xlog.Debug("config does not include model, using input", "input.ModelName", input.ModelName(nil))
+					cfg.Model = input.ModelName(nil)
+				}
 			}
 
 			c.Set(CONTEXT_LOCALS_KEY_LOCALAI_REQUEST, input)
