@@ -153,9 +153,12 @@ func API(application *application.Application) (*echo.Echo, error) {
 		e.Use(middleware.Recover())
 	}
 
-	// Metrics middleware
+	// Metrics middleware. Hoisted so the request extractor below can observe
+	// unknown-model requests through the same exporter.
+	var metricsService *services.LocalAIMetricsService
 	if !application.ApplicationConfig().DisableMetrics {
-		metricsService, err := services.NewLocalAIMetricsService()
+		var err error
+		metricsService, err = services.NewLocalAIMetricsService()
 		if err != nil {
 			return nil, err
 		}
@@ -288,6 +291,7 @@ func API(application *application.Application) (*echo.Echo, error) {
 	mcpJobsMw := auth.RequireFeature(application.AuthDB(), auth.FeatureMCPJobs)
 
 	requestExtractor := httpMiddleware.NewRequestExtractor(application.ModelConfigLoader(), application.ModelLoader(), application.ApplicationConfig())
+	requestExtractor.SetMetrics(metricsService)
 
 	// Register auth routes (login, callback, API keys, user management)
 	routes.RegisterAuthRoutes(e, application)

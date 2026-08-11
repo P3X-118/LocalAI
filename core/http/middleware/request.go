@@ -30,6 +30,13 @@ type RequestExtractor struct {
 	modelConfigLoader *config.ModelConfigLoader
 	modelLoader       *model.ModelLoader
 	applicationConfig *config.ApplicationConfig
+	metrics           *services.LocalAIMetricsService
+}
+
+// SetMetrics attaches the metrics service after construction (it is created
+// conditionally in app.go). A nil service is fine — observation calls no-op.
+func (re *RequestExtractor) SetMetrics(m *services.LocalAIMetricsService) {
+	re.metrics = m
 }
 
 func NewRequestExtractor(modelConfigLoader *config.ModelConfigLoader, modelLoader *model.ModelLoader, applicationConfig *config.ApplicationConfig) *RequestExtractor {
@@ -162,6 +169,9 @@ func (re *RequestExtractor) SetModelAndConfig(initializer func() schema.LocalAIR
 
 			if err != nil {
 				xlog.Warn("Model Configuration File not found", "model", input.ModelName(nil), "error", err)
+				// Remote callers pinned to a renamed/retired model fail
+				// silently from the estate's point of view without this.
+				re.metrics.ObserveUnknownModel(input.ModelName(nil), c.Path())
 			} else if cfg.Model == "" && input.ModelName(nil) != "" {
 				xlog.Debug("config does not include model, using input", "input.ModelName", input.ModelName(nil))
 				cfg.Model = input.ModelName(nil)
