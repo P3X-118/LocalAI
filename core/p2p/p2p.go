@@ -7,11 +7,13 @@ import (
 	"io"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/ipfs/go-log"
+	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/P3X-118/LocalAI/core/schema"
 	"github.com/P3X-118/LocalAI/pkg/utils"
@@ -380,6 +382,16 @@ func newNodeOpts(token string) ([]node.Option, error) {
 	// TODO: move this up, expose more config options when creating a node
 	noDHT := os.Getenv("LOCALAI_P2P_DISABLE_DHT") == "true"
 	noLimits := os.Getenv("LOCALAI_P2P_ENABLE_LIMITS") != "true"
+	// Private-mesh posture knobs. Each one shuts off a path that could carry
+	// swarm traffic (or discovery chatter) outside a dedicated transport
+	// network: mDNS multicasts on every interface, NAT/UPnP talks to the LAN
+	// gateway, and autorelay/holepunching can route streams through third
+	// parties. On a flat mesh where every peer is directly reachable none of
+	// them are needed.
+	noMDNS := os.Getenv("LOCALAI_P2P_DISABLE_MDNS") == "true"
+	noNAT := os.Getenv("LOCALAI_P2P_DISABLE_NAT") == "true"
+	noRelay := os.Getenv("LOCALAI_P2P_DISABLE_RELAY") == "true"
+	noPublicBootstrap := os.Getenv("LOCALAI_P2P_NO_PUBLIC_BOOTSTRAP") == "true"
 
 	var listenMaddrs []string
 	var bootstrapPeers []string
@@ -396,6 +408,46 @@ func newNodeOpts(token string) ([]node.Option, error) {
 
 	dhtAnnounceMaddrs := stringsToMultiAddr(strings.Split(os.Getenv("LOCALAI_P2P_DHT_ANNOUNCE_MADDRS"), ","))
 
+	// Under the private-mesh posture a node must never fall back to
+	// listening on every interface: no listen maddrs means the mesh this
+	// node is meant to ride is absent or misconfigured — refuse to start
+	// rather than bind 0.0.0.0.
+	if noPublicBootstrap && len(listenMaddrs) == 0 {
+		return nil, errors.New("LOCALAI_P2P_NO_PUBLIC_BOOTSTRAP requires LOCALAI_P2P_LISTEN_MADDRS to be set (refusing to listen on all interfaces)")
+	}
+
+	// A persistent identity keeps the peer ID stable across restarts, which
+	// static bootstrap multiaddrs (/ip4/<ip>/tcp/<port>/p2p/<peer-id>) on
+	// other nodes depend on. Without it every restart mints a new identity
+	// and invalidates the addresses peers were told to dial.
+	var privkey []byte
+	var selfID peer.ID
+	if keyFile := os.Getenv("LOCALAI_P2P_PRIVKEY_FILE"); keyFile != "" {
+		var err error
+		privkey, selfID, err = loadOrCreateIdentity(keyFile)
+		if err != nil {
+			return nil, fmt.Errorf("p2p identity %q: %w", keyFile, err)
+		}
+		zlog.Info("p2p persistent identity", "peer_id", selfID.String(), "file", keyFile)
+	}
+
+	// edgevpn's DHT service replaces an empty bootstrap list with the public
+	// IPFS bootstrap peers at runtime — on a private mesh that means dialing
+	// out to the internet. A self-referencing sentinel keeps the list
+	// non-empty while dialing nobody: self-dials are rejected locally by
+	// libp2p without emitting packets.
+	if noPublicBootstrap && !noDHT && len(bootstrapPeers) == 0 {
+		if selfID == "" {
+			return nil, errors.New("LOCALAI_P2P_NO_PUBLIC_BOOTSTRAP with an empty bootstrap list requires LOCALAI_P2P_PRIVKEY_FILE")
+		}
+		bootstrapPeers = []string{fmt.Sprintf("/ip4/127.0.0.1/tcp/1/p2p/%s", selfID.String())}
+	}
+
+	var blockedCIDRs []string
+	if v := os.Getenv("LOCALAI_P2P_BLOCKED_CIDRS"); v != "" {
+		blockedCIDRs = strings.Split(v, ",")
+	}
+
 	libp2ploglevel := os.Getenv("LOCALAI_P2P_LIB_LOGLEVEL")
 	if libp2ploglevel == "" {
 		libp2ploglevel = "fatal"
@@ -403,6 +455,8 @@ func newNodeOpts(token string) ([]node.Option, error) {
 	c := config.Config{
 		ListenMaddrs:      listenMaddrs,
 		DHTAnnounceMaddrs: dhtAnnounceMaddrs,
+		Blacklist:         blockedCIDRs,
+		Privkey:           privkey,
 		Limit: config.ResourceLimit{
 			Enable:   noLimits,
 			MaxConns: 100,
@@ -416,8 +470,8 @@ func newNodeOpts(token string) ([]node.Option, error) {
 			AnnounceInterval: defaultInterval,
 		},
 		NAT: config.NAT{
-			Service:           true,
-			Map:               true,
+			Service:           !noNAT,
+			Map:               !noNAT,
 			RateLimit:         true,
 			RateLimitGlobal:   100,
 			RateLimitPeer:     100,
@@ -425,16 +479,26 @@ func newNodeOpts(token string) ([]node.Option, error) {
 		},
 		Discovery: config.Discovery{
 			DHT:            !noDHT,
-			MDNS:           true,
+			MDNS:           !noMDNS,
 			Interval:       10 * time.Second,
 			BootstrapPeers: bootstrapPeers,
 		},
 		Connection: config.Connection{
-			HolePunch:      true,
-			AutoRelay:      true,
+			HolePunch:      !noRelay,
+			AutoRelay:      !noRelay,
 			MaxConnections: 1000,
 		},
 	}
+
+	zlog.Info("p2p posture",
+		"listen", listenMaddrs,
+		"bootstrap", bootstrapPeers,
+		"dht", !noDHT,
+		"mdns", !noMDNS,
+		"nat", !noNAT,
+		"relay_holepunch", !noRelay,
+		"blocked_cidrs", blockedCIDRs,
+	)
 
 	nodeOpts, _, err := c.ToOpts(llger)
 	if err != nil {
@@ -456,6 +520,45 @@ func stringsToMultiAddr(peers []string) []multiaddr.Multiaddr {
 		res = append(res, addr)
 	}
 	return res
+}
+
+// loadOrCreateIdentity returns a persistent libp2p identity stored at path,
+// generating an Ed25519 key on first use. A corrupt or unreadable existing
+// key is a hard error rather than a silent regeneration: minting a fresh
+// identity would invalidate the /p2p/<peer-id> bootstrap addresses other
+// nodes are configured with.
+func loadOrCreateIdentity(path string) ([]byte, peer.ID, error) {
+	if b, err := os.ReadFile(path); err == nil && len(b) > 0 {
+		pk, err := crypto.UnmarshalPrivateKey(b)
+		if err != nil {
+			return nil, "", fmt.Errorf("unmarshalling existing key: %w", err)
+		}
+		id, err := peer.IDFromPrivateKey(pk)
+		if err != nil {
+			return nil, "", err
+		}
+		return b, id, nil
+	}
+
+	pk, _, err := crypto.GenerateKeyPair(crypto.Ed25519, -1)
+	if err != nil {
+		return nil, "", err
+	}
+	b, err := crypto.MarshalPrivateKey(pk)
+	if err != nil {
+		return nil, "", err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return nil, "", err
+	}
+	if err := os.WriteFile(path, b, 0o600); err != nil {
+		return nil, "", err
+	}
+	id, err := peer.IDFromPrivateKey(pk)
+	if err != nil {
+		return nil, "", err
+	}
+	return b, id, nil
 }
 
 func copyStream(closer chan struct{}, dst io.Writer, src io.Reader) {

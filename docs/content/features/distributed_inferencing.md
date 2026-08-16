@@ -120,7 +120,13 @@ There are options that can be tweaked or parameters that can be set using enviro
 | **LOCALAI_P2P** | Set to "true" to enable p2p |
 | **LOCALAI_FEDERATED** | Set to "true" to enable federated mode |
 | **FEDERATED_SERVER** | Set to "true" to enable federated server |
-| **LOCALAI_P2P_DISABLE_DHT** | Set to "true" to disable DHT and enable p2p layer to be local only (mDNS) |
+| **LOCALAI_P2P_DISABLE_DHT** | Set to "true" to disable DHT and enable p2p layer to be local only (mDNS). Note: the DHT service is also what dials `LOCALAI_P2P_BOOTSTRAP_PEERS_MADDRS` — with DHT and mDNS both disabled the node registers no discovery service and never connects to anyone |
+| **LOCALAI_P2P_DISABLE_MDNS** | Set to "true" to disable mDNS discovery. mDNS multicasts on every interface and auto-connects to answering peers; disable it on private/dedicated networks where peers are configured via static bootstrap addresses |
+| **LOCALAI_P2P_DISABLE_NAT** | Set to "true" to disable the AutoNAT service and UPnP/NAT-PMP port mapping. Not needed when all peers are directly reachable (VPN mesh, flat LAN) |
+| **LOCALAI_P2P_DISABLE_RELAY** | Set to "true" to disable autorelay and hole punching, preventing streams from being routed through relay peers. Not needed when all peers are directly reachable |
+| **LOCALAI_P2P_NO_PUBLIC_BOOTSTRAP** | Set to "true" to refuse the fallback to the public IPFS bootstrap peers when the bootstrap list is empty (an empty list then means "dial nobody and wait to be dialed"; requires **LOCALAI_P2P_PRIVKEY_FILE**) |
+| **LOCALAI_P2P_BLOCKED_CIDRS** | Comma separated list of CIDRs to reject libp2p dials/accepts on (connection-gater deny list), e.g. `10.0.0.0/8,192.168.0.0/16` to keep swarm traffic off RFC1918 ranges |
+| **LOCALAI_P2P_PRIVKEY_FILE** | Path to a persistent libp2p identity key (created on first use). Gives the node a stable peer ID across restarts, which static `/p2p/<peer-id>` bootstrap multiaddresses on other nodes depend on |
 | **LOCALAI_P2P_ENABLE_LIMITS** | Set to "true" to enable connection limits and resources management (useful when running with poor connectivity or want to limit resources consumption) |
 | **LOCALAI_P2P_LISTEN_MADDRS** | Set to comma separated list of multiaddresses to override default libp2p 0.0.0.0 multiaddresses |
 | **LOCALAI_P2P_DHT_ANNOUNCE_MADDRS** | Set to comma separated list of multiaddresses to override announcing of listen multiaddresses (useful when external address:port is remapped) |
@@ -128,6 +134,10 @@ There are options that can be tweaked or parameters that can be set using enviro
 | **LOCALAI_P2P_TOKEN** | Set the token for the p2p network |
 | **LOCALAI_P2P_LOGLEVEL** | Set the loglevel for the LocalAI p2p stack (default: info) |
 | **LOCALAI_P2P_LIB_LOGLEVEL** | Set the loglevel for the underlying libp2p stack (default: fatal) |
+
+### Running on a dedicated / private network
+
+To pin all swarm traffic to one network (for example a VPN mesh where every peer is directly reachable), combine: `LOCALAI_P2P_LISTEN_MADDRS` bound to the node's mesh IP, `LOCALAI_P2P_DISABLE_MDNS=true`, `LOCALAI_P2P_DISABLE_NAT=true`, `LOCALAI_P2P_DISABLE_RELAY=true`, `LOCALAI_P2P_NO_PUBLIC_BOOTSTRAP=true`, and `LOCALAI_P2P_PRIVKEY_FILE` on every node. Keep DHT enabled: it acts as the dialer for the static bootstrap list and stays a private island as long as bootstrap addresses only point at your own peers. The rendezvous node runs with an empty bootstrap list (it dials nobody); every other node sets `LOCALAI_P2P_BOOTSTRAP_PEERS_MADDRS=/ip4/<rendezvous-ip>/tcp/<port>/p2p/<rendezvous-peer-id>`, using the peer ID logged by the rendezvous node at startup ("p2p persistent identity"). Each node logs its effective posture at startup ("p2p posture ...").
 
 
 ## Architecture
